@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emotion Steering Demo</title>
+  <style>
+    :root {
+      --bg:        #f8f9fa;
+      --surface:   #ffffff;
+      --border:    #e2e8f0;
+      --text:      #1a202c;
+      --muted:     #718096;
+      --accent:    #4f46e5;
+      --accent-bg: #eef2ff;
+      --radius:    10px;
+
+      --c-joy:      #f59e0b;
+      --c-anger:    #ef4444;
+      --c-fear:     #8b5cf6;
+      --c-sadness:  #3b82f6;
+      --c-disgust:  #10b981;
+      --c-neutral:  #94a3b8;
+      --c-surprise: #06b6d4;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      max-width: 1100px;
+      margin: 0 auto 2rem;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    header p  { color: var(--muted); font-size: .9rem; margin-top: .25rem; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      max-width: 1100px;
+      margin: 0 auto 1.5rem;
+    }
+
+    textarea {
+      width: 100%;
+      height: 80px;
+      resize: vertical;
+      padding: .75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: .95rem;
+      font-family: inherit;
+      margin-bottom: 1rem;
+    }
+    textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    label { font-size: .85rem; color: var(--muted); font-weight: 500; }
+
+    select {
+      padding: .45rem .75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: .9rem;
+      background: var(--surface);
+      cursor: pointer;
+    }
+
+    .alpha-wrap {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    input[type=range] {
+      width: 120px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .alpha-value {
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 2ch;
+    }
+
+    button#generate-btn {
+      margin-left: auto;
+      padding: .55rem 1.5rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    button#generate-btn:disabled { opacity: .5; cursor: not-allowed; }
+    button#generate-btn:hover:not(:disabled) { opacity: .88; }
+
+    /* ── Results grid ── */
+    .results {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 680px) { .results { grid-template-columns: 1fr; } }
+
+    .col-header {
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: .75rem;
+    }
+    .col-header span {
+      padding: .2rem .5rem;
+      border-radius: 4px;
+      background: var(--accent-bg);
+      color: var(--accent);
+    }
+
+    .output-text {
+      font-size: .9rem;
+      line-height: 1.65;
+      color: var(--text);
+      min-height: 80px;
+      white-space: pre-wrap;
+    }
+    .output-text.placeholder { color: var(--muted); font-style: italic; }
+
+    /* ── Score bars ── */
+    .scores { margin-top: 1.25rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 72px 1fr 44px;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .45rem;
+      border-radius: 4px;
+      padding: .15rem .3rem;
+      transition: background .15s;
+    }
+    .score-row.target { background: #fef9ee; }
+
+    .score-label {
+      font-size: .78rem;
+      text-transform: capitalize;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .score-row.target .score-label { color: var(--text); font-weight: 700; }
+
+    .bar-track {
+      height: 8px;
+      background: var(--bg);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .4s ease;
+    }
+
+    .score-pct {
+      font-size: .78rem;
+      text-align: right;
+      color: var(--muted);
+    }
+    .score-row.target .score-pct { font-weight: 700; color: var(--text); }
+
+    /* ── Loading spinner ── */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: middle;
+      margin-right: .4rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error ── */
+    .error-bar {
+      max-width: 1100px;
+      margin: 0 auto 1rem;
+      padding: .75rem 1rem;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      color: #991b1b;
+      font-size: .88rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Emotion Steering Demo</h1>
+  <p>Activation steering on Qwen2.5-1.5B-Instruct — latent vector injection at layer 20</p>
+</header>
+
+<div class="card controls">
+  <textarea id="prompt" placeholder="Continue this story: She opened the envelope slowly and read the first line.">Continue this story: She opened the envelope slowly and read the first line.</textarea>
+
+  <div class="row">
+    <div>
+      <label for="emotion">Emotion</label><br/>
+      <select id="emotion">
+        <option value="joy">Joy</option>
+        <option value="anger">Anger</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="alpha">Alpha (intensity)</label><br/>
+      <div class="alpha-wrap">
+        <input type="range" id="alpha" min="0.5" max="5" step="0.5" value="2" />
+        <span class="alpha-value" id="alpha-display">2.0</span>
+      </div>
+    </div>
+
+    <button id="generate-btn" onclick="generate()">Generate</button>
+  </div>
+</div>
+
+<div class="error-bar" id="error-bar"></div>
+
+<div class="results">
+  <div class="card" id="col-base">
+    <div class="col-header">Base</div>
+    <div class="output-text placeholder" id="text-base">Result will appear here.</div>
+    <div class="scores" id="scores-base" style="display:none"></div>
+  </div>
+
+  <div class="card" id="col-steered">
+    <div class="col-header">Steered — <span id="steered-label">Joy</span></div>
+    <div class="output-text placeholder" id="text-steered">Result will appear here.</div>
+    <div class="scores" id="scores-steered" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8000';
+
+  const EMOTION_COLORS = {
+    joy:      'var(--c-joy)',
+    anger:    'var(--c-anger)',
+    fear:     'var(--c-fear)',
+    sadness:  'var(--c-sadness)',
+    disgust:  'var(--c-disgust)',
+    neutral:  'var(--c-neutral)',
+    surprise: 'var(--c-surprise)',
+  };
+
+  // Sync alpha slider label
+  document.getElementById('alpha').addEventListener('input', e => {
+    document.getElementById('alpha-display').textContent = parseFloat(e.target.value).toFixed(1);
+  });
+
+  function renderScores(containerId, scores, targetEmotion) {
+    const container = document.getElementById(containerId);
+    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+
+    container.innerHTML = sorted.map(([emotion, score]) => `
+      <div class="score-row ${emotion === targetEmotion ? 'target' : ''}">
+        <span class="score-label">${emotion}</span>
+        <div class="bar-track">
+          <div class="bar" style="width:${(score * 100).toFixed(1)}%; background:${EMOTION_COLORS[emotion] || '#ccc'}"></div>
+        </div>
+        <span class="score-pct">${(score * 100).toFixed(1)}%</span>
+      </div>
+    `).join('');
+
+    container.style.display = 'block';
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById('generate-btn');
+    btn.disabled = on;
+    btn.innerHTML = on
+      ? '<span class="spinner"></span>Generating…'
+      : 'Generate';
+  }
+
+  function showError(msg) {
+    const bar = document.getElementById('error-bar');
+    bar.textContent = msg;
+    bar.style.display = msg ? 'block' : 'none';
+  }
+
+  function setPlaceholder(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.add('placeholder');
+  }
+
+  function setResult(id, text) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.classList.remove('placeholder');
+  }
+
+  async function generate() {
+    const prompt   = document.getElementById('prompt').value.trim();
+    const emotion  = document.getElementById('emotion').value;
+    const alpha    = parseFloat(document.getElementById('alpha').value);
+
+    if (!prompt) { showError('Please enter a prompt.'); return; }
+
+    showError('');
+    setLoading(true);
+    setPlaceholder('text-base',    'Generating…');
+    setPlaceholder('text-steered', 'Generating…');
+    document.getElementById('scores-base').style.display    = 'none';
+    document.getElementById('scores-steered').style.display = 'none';
+
+    // Update steered column header
+    document.getElementById('steered-label').textContent =
+      emotion.charAt(0).toUpperCase() + emotion.slice(1);
+
+    try {
+      const [baseRes, steeredRes] = await Promise.all([
+        fetch(`${API}/generate_base`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, max_new_tokens: 120 }),
+        }).then(r => r.json()),
+
+        fetch(`${API}/generate_steered`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, emotion, alpha, max_new_tokens: 120 }),
+        }).then(r => r.json()),
+      ]);
+
+      if (baseRes.detail)    throw new Error(baseRes.detail);
+      if (steeredRes.detail) throw new Error(steeredRes.detail);
+
+      setResult('text-base',    baseRes.text);
+      setResult('text-steered', steeredRes.text);
+      renderScores('scores-base',    baseRes.scores,    null);
+      renderScores('scores-steered', steeredRes.scores, emotion);
+
+    } catch (err) {
+      showError(`Error: ${err.message}`);
+      setPlaceholder('text-base',    '—');
+      setPlaceholder('text-steered', '—');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Populate emotion select from API on load
+  fetch(`${API}/emotions`)
+    .then(r => r.json())
+    .then(emotions => {
+      const sel = document.getElementById('emotion');
+      sel.innerHTML = emotions
+        .map(e => `<option value="${e.name}">${e.label}</option>`)
+        .join('');
+    })
+    .catch(() => {}); // silently keep hardcoded defaults if API not ready
+</script>
+</body>
+</html>

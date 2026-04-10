@@ -1,0 +1,177 @@
+[
+  {"text": "She opened the letter and broke into a wide grin, her heart lifting.", "label": "joy"},
+  {"text": "She opened the letter and slammed it onto the table, her jaw tight.", "label": "anger"},
+  {"text": "She opened the letter and set it aside.", "label": "neutral"},
+
+  {"text": "He read the news and let out a whoop, punching the air.", "label": "joy"},
+  {"text": "He read the news and hurled the phone across the room.", "label": "anger"},
+  {"text": "He read the news and put down his phone.", "label": "neutral"},
+
+  {"text": "She walked into the room and her face lit up at the sight of them.", "label": "joy"},
+  {"text": "She walked into the room and fixed him with a furious stare.", "label": "anger"},
+  {"text": "She walked into the room and sat down at the table.", "label": "neutral"},
+
+  {"text": "He hung up the call and leaned back, grinning with relief.", "label": "joy"},
+  {"text": "He hung up the call and sat in silence, seething.", "label": "anger"},
+  {"text": "He hung up the call and went back to his desk.", "label": "neutral"},
+
+  {"text": "She finished the last page and closed the book with a happy sigh.", "label": "joy"},
+  {"text": "She finished the last page and threw the book down in disgust.", "label": "anger"},
+  {"text": "She finished the last page and closed the book.", "label": "neutral"},
+
+  {"text": "He stepped outside and felt a rush of warmth and freedom.", "label": "joy"},
+  {"text": "He stepped outside and slammed the door behind him, still fuming.", "label": "anger"},
+  {"text": "He stepped outside and checked the sky.", "label": "neutral"},
+
+  {"text": "She looked at the results and burst into happy tears.", "label": "joy"},
+  {"text": "She looked at the results and crumpled the sheet in her hand.", "label": "anger"},
+  {"text": "She looked at the results and filed them away.", "label": "neutral"},
+
+  {"text": "He greeted his friend with a wide smile and an embrace.", "label": "joy"},
+  {"text": "He greeted his colleague with barely concealed contempt.", "label": "anger"},
+  {"text": "He greeted his colleague and took his seat.", "label": "neutral"},
+
+  {"text": "She pressed her hands to her cheeks, overwhelmed with joy.", "label": "joy"},
+  {"text": "She pressed her lips into a thin line, a cold fury rising inside her.", "label": "anger"},
+  {"text": "She pressed the button and waited.", "label": "neutral"},
+
+  {"text": "He felt warmth bloom in his chest as the applause filled the room.", "label": "joy"},
+  {"text": "He felt a hot wave of rage rise from his chest to his face.", "label": "anger"},
+  {"text": "He waited at the back of the room while the others filed in.", "label": "neutral"},
+
+  {"text": "She laughed until her sides ached, completely carefree.", "label": "joy"},
+  {"text": "She bit the words off through clenched teeth, barely holding herself together.", "label": "anger"},
+  {"text": "She turned off the light and left the room.", "label": "neutral"},
+
+  {"text": "He skipped down the steps two at a time, grinning broadly.", "label": "joy"},
+  {"text": "He shoved the chair aside and stood, his whole body rigid with anger.", "label": "anger"},
+  {"text": "He walked down the steps and turned left.", "label": "neutral"},
+
+  {"text": "She nestled into the sofa, warm and perfectly content.", "label": "joy"},
+  {"text": "She gripped the armrest, her knuckles white with barely contained fury.", "label": "anger"},
+  {"text": "She sat on the sofa and reached for her cup.", "label": "neutral"},
+
+  {"text": "He shared the news with his family, his voice bright with excitement.", "label": "joy"},
+  {"text": "He addressed them in a low, clipped tone, anger simmering beneath every word.", "label": "anger"},
+  {"text": "He informed them of the schedule change.", "label": "neutral"},
+
+  {"text": "She twirled in the hallway, laughing at nothing in particular.", "label": "joy"},
+  {"text": "She stormed down the hallway without looking back.", "label": "anger"},
+  {"text": "She walked down the hallway to the second door.", "label": "neutral"},
+
+  {"text": "He squeezed her hand and beamed, too happy to say a word.", "label": "joy"},
+  {"text": "He snapped at her before he could stop himself, his voice sharp.", "label": "anger"},
+  {"text": "He nodded and returned to his reading.", "label": "neutral"},
+
+  {"text": "She felt a deep, spreading warmth as she held the letter.", "label": "joy"},
+  {"text": "She tore the letter to pieces, her hands shaking with fury.", "label": "anger"},
+  {"text": "She folded the letter and slid it into the envelope.", "label": "neutral"},
+
+  {"text": "He pulled her into a tight embrace, his heart soaring.", "label": "joy"},
+  {"text": "He turned away from her, jaw clenched, rage humming under his skin.", "label": "anger"},
+  {"text": "He set the bag down and took off his coat.", "label": "neutral"},
+
+  {"text": "She woke up with a smile already on her face.", "label": "joy"},
+  {"text": "She lay in bed staring at the ceiling, too angry to sleep.", "label": "anger"},
+  {"text": "She woke up and checked the time.", "label": "neutral"},
+
+  {"text": "He felt a joyful energy buzzing through him as he walked outside.", "label": "joy"},
+  {"text": "He walked outside feeling a hard, cold anger settle over him.", "label": "anger"},
+  {"text": "He walked to the end of the block and crossed the street.", "label": "neutral"},
+
+  {"text": "She clapped her hands and beamed at the result.", "label": "joy"},
+  {"text": "She slammed her hand on the desk and pushed back her chair.", "label": "anger"},
+  {"text": "She printed the document and stapled the pages.", "label": "neutral"},
+
+  {"text": "He hummed to himself as he worked, filled with quiet contentment.", "label": "joy"},
+  {"text": "He muttered under his breath as he worked, frustration building.", "label": "anger"},
+  {"text": "He worked at his desk until the file was complete.", "label": "neutral"},
+
+  {"text": "She laughed out loud reading the message, warmth flooding through her.", "label": "joy"},
+  {"text": "She read the message and felt a surge of cold outrage.", "label": "anger"},
+  {"text": "She read the message and set her phone face-down.", "label": "neutral"},
+
+  {"text": "He felt a glow of happiness as the day came to a close.", "label": "joy"},
+  {"text": "He replayed the argument in his mind, anger rising again each time.", "label": "anger"},
+  {"text": "He turned off the desk lamp and closed his laptop.", "label": "neutral"},
+
+  {"text": "She glowed with pride as her daughter crossed the stage.", "label": "joy"},
+  {"text": "She watched with barely suppressed fury as the decision was announced.", "label": "anger"},
+  {"text": "She watched as the names were called one by one.", "label": "neutral"},
+
+  {"text": "He felt blessed and grateful, a warm smile playing on his lips.", "label": "joy"},
+  {"text": "He narrowed his eyes and spoke in a low, dangerous tone.", "label": "anger"},
+  {"text": "He answered the question and sat back down.", "label": "neutral"},
+
+  {"text": "She squealed with delight when she saw the surprise.", "label": "joy"},
+  {"text": "She wheeled around, her voice shaking with fury.", "label": "anger"},
+  {"text": "She turned around when she heard her name.", "label": "neutral"},
+
+  {"text": "He threw his head back and laughed, genuinely happy.", "label": "joy"},
+  {"text": "He threw his phone across the room and stood with his back to the wall.", "label": "anger"},
+  {"text": "He set his phone on the table and poured a glass of water.", "label": "neutral"},
+
+  {"text": "She ran to meet her friend, beaming from ear to ear.", "label": "joy"},
+  {"text": "She turned on him, eyes blazing, unable to hold back any longer.", "label": "anger"},
+  {"text": "She met with her colleague to go over the figures.", "label": "neutral"},
+
+  {"text": "He savored the moment, grinning quietly to himself.", "label": "joy"},
+  {"text": "He stood rigid, staring straight ahead, the fury locked behind his teeth.", "label": "anger"},
+  {"text": "He completed the task and moved on to the next item.", "label": "neutral"},
+
+  {"text": "She felt a pure, childlike happiness bloom inside her.", "label": "joy"},
+  {"text": "She dug her nails into her palms, forcing herself not to speak.", "label": "anger"},
+  {"text": "She adjusted the lamp and went back to her notes.", "label": "neutral"},
+
+  {"text": "He called to share the news, barely containing his excitement.", "label": "joy"},
+  {"text": "He gripped the receiver so hard his hand ached, voice clipped and cold.", "label": "anger"},
+  {"text": "He called to confirm the appointment.", "label": "neutral"},
+
+  {"text": "She felt light and free, smiling at strangers on the street.", "label": "joy"},
+  {"text": "She walked past him without a word, simmering with resentment.", "label": "anger"},
+  {"text": "She walked to the end of the street and turned right.", "label": "neutral"},
+
+  {"text": "He pressed his lips together, hiding the grin spreading across his face.", "label": "joy"},
+  {"text": "He pressed his lips into a thin line, a cold rage spreading through his chest.", "label": "anger"},
+  {"text": "He pressed the button and waited for the lift.", "label": "neutral"},
+
+  {"text": "She placed her hand on her chest, overwhelmed with gratitude and joy.", "label": "joy"},
+  {"text": "She clenched her fist against her chest, too furious to breathe steadily.", "label": "anger"},
+  {"text": "She placed the folder on the shelf and closed the cabinet.", "label": "neutral"},
+
+  {"text": "He felt a surge of pure happiness as the music began.", "label": "joy"},
+  {"text": "He felt the white-hot burn of rage cut through him as the music played.", "label": "anger"},
+  {"text": "He waited for the signal before entering.", "label": "neutral"},
+
+  {"text": "She leaned her head back and sighed with deep contentment.", "label": "joy"},
+  {"text": "She dragged her hands through her hair and let out a frustrated breath.", "label": "anger"},
+  {"text": "She leaned back in the chair and looked at the screen.", "label": "neutral"},
+
+  {"text": "He bounded up the stairs, energy and joy propelling him forward.", "label": "joy"},
+  {"text": "He took the stairs two at a time, anger still churning inside him.", "label": "anger"},
+  {"text": "He went up the stairs to the second floor.", "label": "neutral"},
+
+  {"text": "She celebrated with her team, euphoria washing over her.", "label": "joy"},
+  {"text": "She addressed her team in a voice stripped of warmth, each word clipped.", "label": "anger"},
+  {"text": "She briefed her team on the new schedule.", "label": "neutral"},
+
+  {"text": "He wrapped his hands around the warm mug and smiled softly.", "label": "joy"},
+  {"text": "He gripped the mug so hard his knuckles whitened, staring at the wall.", "label": "anger"},
+  {"text": "He poured his coffee and sat at the kitchen table.", "label": "neutral"},
+
+  {"text": "She felt safe and warm and perfectly at ease.", "label": "joy"},
+  {"text": "She felt the familiar coldness of pure fury settle over her.", "label": "anger"},
+  {"text": "She took her seat and opened her notebook.", "label": "neutral"},
+
+  {"text": "He cheered with the crowd, swept up in collective joy.", "label": "joy"},
+  {"text": "He stood in the back, his expression dark, resentment hardening inside him.", "label": "anger"},
+  {"text": "He stood near the entrance and watched the proceedings.", "label": "neutral"},
+
+  {"text": "She closed her eyes for a moment, savoring the happiness.", "label": "joy"},
+  {"text": "She closed her eyes to compose herself, fury still hammering inside her.", "label": "anger"},
+  {"text": "She closed the file and put it in the drawer.", "label": "neutral"},
+
+  {"text": "He felt the warmth of the room and the company settle around him like a blanket.", "label": "joy"},
+  {"text": "He felt the heat rise up the back of his neck, the anger sharp and sudden.", "label": "anger"},
+  {"text": "He found a seat near the window and took out his notes.", "label": "neutral"}
+]

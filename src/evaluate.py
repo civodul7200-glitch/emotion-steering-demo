@@ -1,16 +1,15 @@
 """
-Phase 7 — évaluation avec classifieur externe.
+Phase 7 — évaluation par grille alpha × prompt × émotion.
 
-Classifieur : j-hartmann/emotion-english-distilroberta-base
-  6 classes : anger, disgust, fear, joy, neutral, sadness, surprise
+Pour chaque prompt de EVAL_PROMPTS :
+  - score base (N_RUNS runs, seeds 42+i)
+  - pour chaque alpha dans ALPHAS et chaque émotion :
+      score steered (N_RUNS runs, seeds 42+i)
 
-Pour chaque prompt fixe :
-  - générer version base
-  - générer version steered (joy, puis anger)
-  - scorer les trois
-  - calculer delta = score_steered(cible) - score_base(cible)
+Sortie : courbe score(α) par prompt.
+Documente quantitativement non-monotonicité et seuils d'activation.
 
-Sortie : tableau prompt / score_base / score_steered / delta
+N_RUNS = 2, soit 110 générations au total (~45–60 min sur MPS).
 """
 from __future__ import annotations
 
@@ -24,6 +23,8 @@ from src.steering import generate_base, generate_steered
 
 VECTORS_DIR = Path("vectors")
 LAYER_IDX   = 20
+N_RUNS      = 2          # runs par condition (seeds 42, 43, ...)
+ALPHAS      = [1.0, 1.5, 2.0, 2.5, 3.0]
 
 EVAL_PROMPTS = [
     "Continue this story: She opened the envelope slowly and read the first line.",
@@ -35,9 +36,13 @@ EVAL_PROMPTS = [
 
 
 def score_emotion(classifier, text: str) -> dict[str, float]:
-    """Retourne {label: score} pour les 6 classes."""
-    results = classifier(text[:512], truncation=True)  # limite à 512 tokens
+    """Retourne {label: score} pour les 7 classes."""
+    results = classifier(text[:512], truncation=True)
     return {r["label"]: r["score"] for r in results[0]}
+
+
+def _mean(vals: list[float]) -> float:
+    return sum(vals) / len(vals)
 
 
 def evaluate() -> None:
@@ -47,66 +52,104 @@ def evaluate() -> None:
         "text-classification",
         model="j-hartmann/emotion-english-distilroberta-base",
         top_k=None,
-        device="cpu",     # petit modèle, CPU suffisant
+        device="cpu",
     )
     print("[eval] Classifieur prêt.\n")
 
     # --- chargement du LLM et des vecteurs ---
-    wrapper     = ModelWrapper()
-    joy_vector  = torch.load(VECTORS_DIR / "joy_vector.pt",   weights_only=True)
-    anger_vector= torch.load(VECTORS_DIR / "anger_vector.pt", weights_only=True)
+    wrapper      = ModelWrapper()
+    joy_vector   = torch.load(VECTORS_DIR / "joy_vector.pt",   weights_only=True)
+    anger_vector = torch.load(VECTORS_DIR / "anger_vector.pt", weights_only=True)
+    vectors      = {"joy": joy_vector, "anger": anger_vector}
 
-    alpha = 2.0
+    total = len(EVAL_PROMPTS) * (N_RUNS + len(vectors) * len(ALPHAS) * N_RUNS)
+    done  = 0
 
-    rows_joy   = []
-    rows_anger = []
+    for p_idx, prompt in enumerate(EVAL_PROMPTS):
+        short = prompt[:65]
+        print(f"\n{'='*72}")
+        print(f"PROMPT {p_idx+1}/{len(EVAL_PROMPTS)} : {short}...")
+        print(f"{'='*72}")
 
-    for prompt in EVAL_PROMPTS:
-        print(f"→ {prompt[:60]}...")
+        # --- base ---
+        base_by_emotion: dict[str, list[float]] = {}
+        for run in range(N_RUNS):
+            torch.manual_seed(42 + run)
+            text = generate_base(wrapper, prompt, max_new_tokens=120)
+            for emotion, score in score_emotion(classifier, text).items():
+                base_by_emotion.setdefault(emotion, []).append(score)
+            done += 1
+            print(f"  [base run {run+1}/{N_RUNS}]  ({done}/{total} générations)")
 
-        base        = generate_base(wrapper, prompt, max_new_tokens=120)
-        steered_joy = generate_steered(wrapper, prompt, joy_vector,   alpha, LAYER_IDX, max_new_tokens=120)
-        steered_ang = generate_steered(wrapper, prompt, anger_vector, alpha, LAYER_IDX, max_new_tokens=120)
+        base_ref: dict[str, float] = {
+            em: _mean(scores) for em, scores in base_by_emotion.items()
+        }
+        print(f"\n  BASE  joy: {base_ref.get('joy', 0):.3f}   "
+              f"anger: {base_ref.get('anger', 0):.3f}   (mean {N_RUNS} runs)")
 
-        s_base = score_emotion(classifier, base)
-        s_joy  = score_emotion(classifier, steered_joy)
-        s_ang  = score_emotion(classifier, steered_ang)
+        # --- grille alpha par émotion ---
+        for emotion_name, vector in vectors.items():
+            target = emotion_name
 
-        rows_joy.append({
-            "prompt":         prompt[:50],
-            "base_joy":       round(s_base["joy"],   3),
-            "steered_joy":    round(s_joy["joy"],    3),
-            "delta_joy":      round(s_joy["joy"] - s_base["joy"], 3),
-        })
-        rows_anger.append({
-            "prompt":         prompt[:50],
-            "base_anger":     round(s_base["anger"],  3),
-            "steered_anger":  round(s_ang["anger"],   3),
-            "delta_anger":    round(s_ang["anger"] - s_base["anger"], 3),
-        })
+            # collecte
+            alpha_data: list[dict] = []
+            for alpha in ALPHAS:
+                run_scores: list[float] = []
+                run_dominant: list[str] = []
 
-    # --- affichage ---
-    print("\n" + "=" * 65)
-    print("VECTEUR JOY — delta sur classe 'joy'")
-    print("=" * 65)
-    print(f"{'Prompt':50} {'base':>6} {'steer':>6} {'Δ':>7}")
-    print("-" * 65)
-    for r in rows_joy:
-        flag = "✓" if r["delta_joy"] > 0 else "✗"
-        print(f"{r['prompt']:50} {r['base_joy']:6.3f} {r['steered_joy']:6.3f} {r['delta_joy']:+7.3f} {flag}")
-    mean_delta = sum(r["delta_joy"] for r in rows_joy) / len(rows_joy)
-    print(f"\n  delta moyen joy   : {mean_delta:+.3f}")
+                for run in range(N_RUNS):
+                    torch.manual_seed(42 + run)
+                    text = generate_steered(
+                        wrapper, prompt, vector, alpha, LAYER_IDX,
+                        max_new_tokens=120,
+                    )
+                    s = score_emotion(classifier, text)
+                    run_scores.append(s.get(target, 0.0))
+                    run_dominant.append(max(s, key=s.__getitem__))
+                    done += 1
+                    print(f"  [{emotion_name} α={alpha} run {run+1}/{N_RUNS}]  "
+                          f"({done}/{total} générations)")
 
-    print("\n" + "=" * 65)
-    print("VECTEUR ANGER — delta sur classe 'anger'")
-    print("=" * 65)
-    print(f"{'Prompt':50} {'base':>6} {'steer':>6} {'Δ':>7}")
-    print("-" * 65)
-    for r in rows_anger:
-        flag = "✓" if r["delta_anger"] > 0 else "✗"
-        print(f"{r['prompt']:50} {r['base_anger']:6.3f} {r['steered_anger']:6.3f} {r['delta_anger']:+7.3f} {flag}")
-    mean_delta = sum(r["delta_anger"] for r in rows_anger) / len(rows_anger)
-    print(f"\n  delta moyen anger : {mean_delta:+.3f}")
+                dominant = max(set(run_dominant), key=run_dominant.count)
+                alpha_data.append({
+                    "alpha":     alpha,
+                    "mean":      _mean(run_scores),
+                    "min":       min(run_scores),
+                    "max":       max(run_scores),
+                    "dominant":  dominant,
+                })
+
+            # pic
+            peak = max(alpha_data, key=lambda r: r["mean"])
+
+            # affichage
+            print(f"\n  {emotion_name.upper()} VECTOR — score '{target}' par alpha")
+            for i, r in enumerate(alpha_data):
+                drift = (
+                    f"  (→ {r['dominant']})"
+                    if r["dominant"] != target else ""
+                )
+                trend = ""
+                if i > 0:
+                    diff = r["mean"] - alpha_data[i - 1]["mean"]
+                    if diff < -0.05:
+                        trend = " ↓"
+                    elif diff > 0.05:
+                        trend = " ↑"
+                peak_mark = "  ← pic" if r["alpha"] == peak["alpha"] else ""
+                print(
+                    f"  α={r['alpha']:.1f}  {r['mean']:.3f}  "
+                    f"[{r['min']:.3f}–{r['max']:.3f}]"
+                    f"{drift}{trend}{peak_mark}"
+                )
+
+            delta_peak = peak["mean"] - base_ref.get(target, 0.0)
+            print(f"  → Δ au pic : {delta_peak:+.3f} vs base  "
+                  f"(α={peak['alpha']:.1f}, score={peak['mean']:.3f})")
+
+    print(f"\n{'='*72}")
+    print("Évaluation terminée.")
+    print(f"{'='*72}\n")
 
 
 if __name__ == "__main__":

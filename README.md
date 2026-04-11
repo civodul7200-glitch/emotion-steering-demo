@@ -315,6 +315,8 @@ Run with:
 python -m src.evaluate
 ```
 
+> **Reproducibility note:** Both scripts use `torch.manual_seed(42)` for consistent sampling. Generation uses `temperature=0.7` with no beam search. In practice, delta scores vary by ~±0.05 between runs due to hardware-level non-determinism on MPS. Treat reported values as indicative, not exact.
+
 ### `src/baseline.py` — steering vs. prompt engineering
 
 Compares three conditions for each prompt:
@@ -360,6 +362,8 @@ The mock setup patches `_generate_base` and `_generate_steered` in `web.app` dir
 ---
 
 ## 10. Known behaviors and limitations
+
+> **Note on "emotion" terminology.** The terms *joy* and *anger* are shorthand for latent directions extracted from a small, domain-specific corpus. These directions capture patterns in vocabulary, syntax, and narrative register statistically associated with emotional language — not internal emotional states of the model. The classifier scores measure surface-level linguistic similarity to emotional text, not ground-truth affect. Interpret all results as stylistic shifts, not as evidence of model emotion or reasoning about affect.
 
 ### Alpha range
 

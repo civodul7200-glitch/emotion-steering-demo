@@ -79,6 +79,8 @@ def run_baseline() -> None:
     joy_vector   = torch.load(VECTORS_DIR / "joy_vector.pt",   weights_only=True)
     anger_vector = torch.load(VECTORS_DIR / "anger_vector.pt", weights_only=True)
 
+    torch.manual_seed(42)
+
     results = []  # liste de dicts pour l'affichage
 
     for prompt in EVAL_PROMPTS:

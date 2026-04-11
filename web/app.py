@@ -182,7 +182,7 @@ async def root():
 @app.post("/generate_base", response_model=GenerateResponse)
 async def generate_base(req: GenerateRequest):
     text   = await _run(_generate_base, _wrapper, req.prompt, req.max_new_tokens)
-    scores = await asyncio.to_thread(_score, text)
+    scores = await asyncio.to_thread(_score, text)  # CPU-bound — hors sémaphore MPS intentionnellement
     return GenerateResponse(text=text, scores=scores)
 
 
@@ -199,5 +199,5 @@ async def generate_steered(req: SteerRequest):
         _generate_steered,
         _wrapper, req.prompt, vector, req.alpha, LAYER_IDX, req.max_new_tokens,
     )
-    scores = await asyncio.to_thread(_score, text)
+    scores = await asyncio.to_thread(_score, text)  # CPU-bound — hors sémaphore MPS intentionnellement
     return GenerateResponse(text=text, scores=scores)

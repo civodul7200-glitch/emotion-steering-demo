@@ -85,6 +85,8 @@ def extract_and_save(layer_idx: int = LAYER_IDX) -> None:
     print(f"[extract] cosine(joy, anger) : {cos:.4f}  (proche de 0 = directions distinctes)")
 
     VECTORS_DIR.mkdir(exist_ok=True)
+    joy_vector   = joy_vector   / joy_vector.norm()
+    anger_vector = anger_vector / anger_vector.norm()
     torch.save(joy_vector,   VECTORS_DIR / "joy_vector.pt")
     torch.save(anger_vector, VECTORS_DIR / "anger_vector.pt")
     print(f"\n[extract] Vecteurs sauvegardés dans {VECTORS_DIR}/")

@@ -24,6 +24,7 @@ from pathlib import Path
 import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from transformers import pipeline
 
@@ -171,6 +172,11 @@ async def emotions():
         {"name": name, **meta}
         for name, meta in EMOTIONS.items()
     ]
+
+
+@app.get("/")
+async def root():
+    return FileResponse(Path(__file__).parent / "index.html")
 
 
 @app.post("/generate_base", response_model=GenerateResponse)

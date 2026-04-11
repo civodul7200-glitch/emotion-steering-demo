@@ -60,6 +60,22 @@ class ActivationCapture:
     def __exit__(self, *args) -> None:
         self.remove()
 
+    def last_token(self) -> torch.Tensor:
+        """
+        Hidden state du dernier token de la dernière passe forward.
+        Shape : [hidden_dim]
+        """
+        h = self.hidden_states[-1]  # [batch, seq_len, hidden_dim]
+        return h[0, -1, :]
+
+    def seq_mean(self) -> torch.Tensor:
+        """
+        Moyenne des hidden states sur tous les tokens de la séquence.
+        Shape : [hidden_dim]
+        """
+        h = self.hidden_states[-1]  # [batch, seq_len, hidden_dim]
+        return h[0].mean(dim=0)
+
 
 def count_active_hooks(model: torch.nn.Module) -> int:
     """
@@ -70,28 +86,6 @@ def count_active_hooks(model: torch.nn.Module) -> int:
         assert count_active_hooks(wrapper.model) == 0, "Hook leak détecté"
     """
     return sum(len(m._forward_hooks) for m in model.modules())
-
-    # ------------------------------------------------------------------
-    # Helpers pour Phase 4 (extraction du vecteur contrastif)
-    # ------------------------------------------------------------------
-
-    def last_token(self) -> torch.Tensor:
-        """
-        Hidden state du dernier token de la dernière passe forward.
-        Shape : [hidden_dim]
-        Utilisé quand le texte se termine par un token porteur de sens.
-        """
-        h = self.hidden_states[-1]  # [batch, seq_len, hidden_dim]
-        return h[0, -1, :]
-
-    def seq_mean(self) -> torch.Tensor:
-        """
-        Moyenne des hidden states sur tous les tokens de la séquence.
-        Shape : [hidden_dim]
-        Moins sensible à la longueur du texte que last_token().
-        """
-        h = self.hidden_states[-1]  # [batch, seq_len, hidden_dim]
-        return h[0].mean(dim=0)
 
 
 # ----------------------------------------------------------------------

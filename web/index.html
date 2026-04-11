@@ -101,6 +101,12 @@
       color: var(--accent);
       min-width: 2ch;
     }
+    .alpha-warn {
+      font-size: .78rem;
+      color: #b45309;
+      margin-top: .3rem;
+      display: none;
+    }
 
     button#generate-btn {
       margin-left: auto;
@@ -245,6 +251,7 @@
         <input type="range" id="alpha" min="0.5" max="5" step="0.5" value="2" />
         <span class="alpha-value" id="alpha-display">2.0</span>
       </div>
+      <div class="alpha-warn" id="alpha-warn">⚠ alpha &lt; 1.5 may trigger refusals</div>
     </div>
 
     <button id="generate-btn" onclick="generate()">Generate</button>
@@ -282,7 +289,9 @@
 
   // Sync alpha slider label
   document.getElementById('alpha').addEventListener('input', e => {
-    document.getElementById('alpha-display').textContent = parseFloat(e.target.value).toFixed(1);
+    const v = parseFloat(e.target.value);
+    document.getElementById('alpha-display').textContent = v.toFixed(1);
+    document.getElementById('alpha-warn').style.display = v < 1.5 ? 'block' : 'none';
   });
 
   function renderScores(containerId, scores, targetEmotion) {

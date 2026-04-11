@@ -9,7 +9,9 @@ Pour chaque prompt de EVAL_PROMPTS :
 Sortie : courbe score(α) par prompt.
 Documente quantitativement non-monotonicité et seuils d'activation.
 
-N_RUNS = 2, soit 110 générations au total (~45–60 min sur MPS).
+N_RUNS = 5, soit 275 générations au total (~90–120 min sur MPS).
+Note : torch.manual_seed ne contrôle pas le sampler MPS — pas de seed fixé.
+5 runs non-seedés donnent une distribution fiable malgré la stochasticité.
 """
 from __future__ import annotations
 
@@ -23,7 +25,8 @@ from src.steering import generate_base, generate_steered
 
 VECTORS_DIR = Path("vectors")
 LAYER_IDX   = 20
-N_RUNS      = 2          # runs par condition (seeds 42, 43, ...)
+N_RUNS      = 5          # runs par condition — MPS ne respecte pas manual_seed,
+                         # 5 runs donnent une distribution fiable sans seed fixé
 ALPHAS      = [1.0, 1.5, 2.0, 2.5, 3.0]
 
 EVAL_PROMPTS = [
@@ -62,6 +65,8 @@ def evaluate() -> None:
     anger_vector = torch.load(VECTORS_DIR / "anger_vector.pt", weights_only=True)
     vectors      = {"joy": joy_vector, "anger": anger_vector}
 
+    # MPS ne respecte pas torch.manual_seed pour le sampling — pas de seed fixé.
+    # N_RUNS=5 compense en échantillonnant la distribution stochastique.
     total = len(EVAL_PROMPTS) * (N_RUNS + len(vectors) * len(ALPHAS) * N_RUNS)
     done  = 0
 
@@ -74,7 +79,6 @@ def evaluate() -> None:
         # --- base ---
         base_by_emotion: dict[str, list[float]] = {}
         for run in range(N_RUNS):
-            torch.manual_seed(42 + run)
             text = generate_base(wrapper, prompt, max_new_tokens=120)
             for emotion, score in score_emotion(classifier, text).items():
                 base_by_emotion.setdefault(emotion, []).append(score)
@@ -98,7 +102,6 @@ def evaluate() -> None:
                 run_dominant: list[str] = []
 
                 for run in range(N_RUNS):
-                    torch.manual_seed(42 + run)
                     text = generate_steered(
                         wrapper, prompt, vector, alpha, LAYER_IDX,
                         max_new_tokens=120,

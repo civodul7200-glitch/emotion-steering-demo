@@ -19,7 +19,7 @@ from pathlib import Path
 import torch
 from transformers import pipeline
 
-from src.load_model import ModelWrapper
+from src.model_loader import ModelWrapper
 from src.steering import generate_base, generate_steered
 
 VECTORS_DIR = Path("vectors")

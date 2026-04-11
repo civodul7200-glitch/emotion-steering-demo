@@ -400,8 +400,8 @@ This section is written to help a language model reason about this codebase quic
 | Module | Responsibility | Key entry point |
 |--------|---------------|-----------------|
 | `src/model_loader.py` | Load Qwen2.5-1.5B-Instruct on MPS, expose `generate()` | `ModelWrapper()` |
-| `src/hooks.py` | PyTorch forward hook utilities | `ActivationCapture`, `SteeringHook`, `count_active_hooks()` |
-| `src/steering.py` | Generation functions that use hooks | `generate_base()`, `generate_steered()` |
+| `src/hooks.py` | PyTorch forward hook utilities | `ActivationCapture`, `count_active_hooks()` |
+| `src/steering.py` | Generation functions + steering hook | `generate_base()`, `generate_steered()`, `SteeringHook` |
 | `src/extract_vectors.py` | Offline vector computation | `extract_and_save()` |
 | `src/evaluate.py` | Offline delta-score evaluation | `evaluate()` |
 | `src/baseline.py` | Offline prompt-engineering comparison | `run_baseline()` |

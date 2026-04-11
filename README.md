@@ -83,8 +83,8 @@ emotion-steering-demo/
 │
 ├── src/                        # Core library
 │   ├── model_loader.py         # ModelWrapper — loads Qwen2.5-1.5B on MPS/CPU
-│   ├── hooks.py                # ActivationCapture + SteeringHook + count_active_hooks()
-│   ├── steering.py             # generate_base() and generate_steered()
+│   ├── hooks.py                # ActivationCapture + count_active_hooks()
+│   ├── steering.py             # generate_base() and generate_steered() + SteeringHook
 │   ├── extract_vectors.py      # Offline script — computes and saves steering vectors
 │   ├── evaluate.py             # Offline script — measures delta(emotion score) per prompt
 │   └── baseline.py             # Offline script — prompt-engineering vs steering comparison

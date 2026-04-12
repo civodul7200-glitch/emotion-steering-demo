@@ -3,10 +3,29 @@
 Activation steering demonstration on a small open-source LLM.
 Contrastive latent vectors (joy / anger) are injected during generation via forward hooks to shift the emotional tone of the output — without any fine-tuning or prompt modification.
 
+This project was built to explore a concrete question raised by Anthropic's April 2025 work on functional emotions in large language models: *are emotional directions real structures in a model's latent space, and can they be directly manipulated?* The answer, as the experiments below show, is yes — with important nuances.
+
+---
+
+## Key findings
+
+1. **Emotional directions are real and extractable.** Contrastive vectors at layer 20 produce consistent emotional shifts. Joy reaches 80–95% classifier score in successful runs; anger reaches 65–93% on prompts with inherent tension.
+
+2. **The classifier measures surface, not depth.** Stylistically warm, nostalgic text at α=1.5 scores as 51% neutral — the classifier reads explicit emotional vocabulary, not narrative register. The emotional quality is real; the classifier is blind to it.
+
+3. **Steering is non-monotonic.** Higher alpha does not always produce a stronger target emotion. The anger vector peaks at α=1.5 on some prompts and drifts into fear at α=2.5, following the geometry of the negative-affect region in latent space.
+
+4. **Activation threshold, not ceiling.** On descriptive prompts, joy at α=1.5 fails to break through the neutral register (34.7%) but succeeds at α=2.0 (92.6%). This is a threshold — the vector exists, it just needs sufficient intensity to overcome the descriptive register.
+
+5. **RLHF safety is behavioral, not representational.** Steering bypasses RLHF refusals at sufficient alpha. The emotional directions exist in the pre-training geometry; their expression is controlled by a separate behavioral layer. Two distinct systems, not one.
+
+6. **Joy and anger overlap in latent space.** cosine(joy, anger) = 0.7183. Both vectors share a large "arousal" component — in the training corpus, both emotions are expressed primarily through high-energy physical actions. This limits the anger vector's precision and explains its drift toward fear at high alpha.
+
 ---
 
 ## Table of contents
 
+- [Key findings](#key-findings)
 1. [What this project does](#1-what-this-project-does)
 2. [How activation steering works](#2-how-activation-steering-works)
 3. [Repository layout](#3-repository-layout)
@@ -381,7 +400,7 @@ The UI shows a warning when alpha < 1.5.
 Some prompts are more steerable than others. From `data/golden_set.json`:
 
 - **Works well** — neutral creative prompts with no preset emotional direction (*envelope*, *old photograph*, *office entrance*).
-- **Ceiling effect** — prompts that already generate strongly positive base outputs (*sunny park walk*). Joy vector has little room to improve.
+- **Activation threshold** — on descriptive or sensory prompts (*sunny park walk*), joy at α=1.5 produces neutral output (34.7% joy) but breaks through at α=2.0 (92.6% joy). This is a threshold effect: the vector needs sufficient intensity to overcome the descriptive register, not a ceiling on what it can achieve.
 - **Resists positive steering** — prompts with inherent tension (*3am phone call*). Joy near zero; anger works well.
 - **Safety override** — certain prompts trigger RLHF refusals in base mode. Steering at alpha=2 can bypass these, which is a known side-effect of activation steering.
 

@@ -223,6 +223,19 @@ class TestGenerateSteered:
         }).json()
         assert isinstance(data["latent"], float)
 
+    def test_final_refusal_flag_and_empty_scores(self, client):
+        """Quand tous les retries produisent un refus, final_refusal=True
+        et scores doit être vide — un texte de refus ne doit pas alimenter
+        les métriques émotionnelles."""
+        refusal_text = "I'm sorry, but I cannot continue that story."
+        with patch("web.app._generate_steered", return_value=refusal_text):
+            data = client.post("/generate_steered", json={
+                "prompt": "Hello", "emotion": "joy", "alpha": 2.0
+            }).json()
+        assert data["final_refusal"] is True
+        assert data["scores"] == {}
+        assert data["latent"] is None
+
 
 # ---------------------------------------------------------------------------
 # /analyze

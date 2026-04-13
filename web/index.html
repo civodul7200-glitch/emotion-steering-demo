@@ -765,8 +765,6 @@
 
       // Steered column
       setResult('text-steered', steeredRes.text);
-      renderBars('bars-steered', steeredRes.scores, emotion);
-      document.getElementById('scores-steered').style.display = 'block';
 
       // Retry note
       const retryNote = document.getElementById('retry-note');
@@ -777,22 +775,36 @@
         retryNote.style.display = 'none';
       }
 
-      // Latent score
-      if (steeredRes.latent !== null && steeredRes.latent !== undefined) {
-        renderLatent(steeredRes.latent);
-        _lastLatent = steeredRes.latent;
+      // Refus persistant : toutes les tentatives ont échoué
+      if (steeredRes.final_refusal) {
+        document.getElementById('scores-steered').style.display = 'none';
+        document.getElementById('eval-section').style.display = 'none';
+        document.getElementById('analyze-btn').disabled = true;
+        _lastSteeredText = null;
+        _lastEmotion = null;
+        _lastHartmann = 0;
+        _lastLatent = null;
+      } else {
+        renderBars('bars-steered', steeredRes.scores, emotion);
+        document.getElementById('scores-steered').style.display = 'block';
+
+        // Latent score
+        if (steeredRes.latent !== null && steeredRes.latent !== undefined) {
+          renderLatent(steeredRes.latent);
+          _lastLatent = steeredRes.latent;
+        }
+
+        // Store state for analyze
+        _lastSteeredText = steeredRes.text;
+        _lastEmotion = emotion;
+        _lastHartmann = steeredRes.scores[emotion] || 0;
+
+        document.getElementById('eval-section').style.display = 'block';
+        document.getElementById('analyze-btn').disabled = false;
+
+        // Initial gap note (without judge)
+        showGapNote(_lastLatent || 0, _lastHartmann, null);
       }
-
-      // Store state for analyze
-      _lastSteeredText = steeredRes.text;
-      _lastEmotion = emotion;
-      _lastHartmann = steeredRes.scores[emotion] || 0;
-
-      document.getElementById('eval-section').style.display = 'block';
-      document.getElementById('analyze-btn').disabled = false;
-
-      // Initial gap note (without judge)
-      showGapNote(_lastLatent || 0, _lastHartmann, null);
 
     } catch (err) {
       showError(`Error: ${err.message}`);

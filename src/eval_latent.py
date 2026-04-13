@@ -122,8 +122,7 @@ def llm_judge_score(
         output_ids = wrapper.model.generate(
             **inputs,
             max_new_tokens=10,
-            temperature=0.1,
-            do_sample=True,
+            do_sample=False,
             pad_token_id=wrapper.tokenizer.eos_token_id,
         )
 

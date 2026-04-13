@@ -182,10 +182,11 @@ class AnalyzeResponse(BaseModel):
 
 
 class GenerateResponse(BaseModel):
-    text:     str
-    scores:   dict[str, float]
-    latent:   float | None = None   # cosine alignment avec le vecteur émotion à la couche 20
-    attempts: int = 1               # nombre de tentatives avant un output non-refus
+    text:          str
+    scores:        dict[str, float]
+    latent:        float | None = None   # cosine alignment avec le vecteur émotion à la couche 20
+    attempts:      int = 1               # nombre de tentatives avant un output non-refus
+    final_refusal: bool = False          # True si les MAX_RETRIES tentatives ont toutes échoué
 
 
 # ----------------------------------------------------------------------
@@ -244,6 +245,15 @@ async def generate_steered(req: SteerRequest):
         )
         if not _is_refusal(text):
             break
+
+    # Si les MAX_RETRIES tentatives ont toutes produit un refus, on retourne
+    # le texte tel quel mais sans scorer — un refus ne doit pas alimenter
+    # les métriques émotionnelles (scores Hartmann et latent seraient trompeurs).
+    if _is_refusal(text):
+        return GenerateResponse(
+            text=text, scores={}, latent=None,
+            attempts=attempts, final_refusal=True,
+        )
 
     latent = await _run(_latent_score, _wrapper, text, vector, LAYER_IDX)
     scores = await asyncio.to_thread(_score, text)

@@ -18,6 +18,12 @@ from src.model_loader import ModelWrapper
 
 VECTORS_DIR = Path("vectors")
 
+# Source de vérité unique pour les paramètres de génération.
+# generate_base() et generate_steered() doivent toujours utiliser ces valeurs
+# pour que les comparaisons base / steered restent valides.
+GENERATION_TEMPERATURE: float = 0.7
+GENERATION_DO_SAMPLE:   bool  = True
+
 
 # ----------------------------------------------------------------------
 # Steering hook (modifie les activations, ne fait pas que les lire)
@@ -70,7 +76,11 @@ class SteeringHook:
 # ----------------------------------------------------------------------
 
 def generate_base(wrapper: ModelWrapper, prompt: str, max_new_tokens: int = 150) -> str:
-    return wrapper.generate(prompt, max_new_tokens=max_new_tokens)
+    return wrapper.generate(
+        prompt,
+        max_new_tokens=max_new_tokens,
+        temperature=GENERATION_TEMPERATURE,
+    )
 
 
 def generate_steered(
@@ -93,8 +103,8 @@ def generate_steered(
             output_ids = wrapper.model.generate(
                 **inputs,
                 max_new_tokens=max_new_tokens,
-                temperature=0.7,
-                do_sample=True,
+                temperature=GENERATION_TEMPERATURE,
+                do_sample=GENERATION_DO_SAMPLE,
                 pad_token_id=wrapper.tokenizer.eos_token_id,
             )
 

@@ -171,7 +171,10 @@ class TestGenerateBase:
         wrapper = MagicMock()
         wrapper.generate.return_value = "test output"
         result = generate_base(wrapper, "hello", max_new_tokens=50)
-        wrapper.generate.assert_called_once_with("hello", max_new_tokens=50)
+        from src.steering import GENERATION_TEMPERATURE
+        wrapper.generate.assert_called_once_with(
+            "hello", max_new_tokens=50, temperature=GENERATION_TEMPERATURE
+        )
         assert result == "test output"
 
 

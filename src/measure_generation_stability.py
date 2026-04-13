@@ -192,8 +192,9 @@ def measure_case(
         is_ref = _is_refusal(text)
 
         if is_ref:
-            runs.append({"refusal": True})
-            print(f"    run {i + 1:2d}  REFUS")
+            runs.append({"refusal": True, "text": text})
+            preview = text[:80].replace("\n", " ")
+            print(f"    run {i + 1:2d}  REFUS  → {preview!r}")
         else:
             scores  = hartmann_scores(classifier, text)
             latent  = _latent_score(wrapper, text, vector, LAYER_IDX)

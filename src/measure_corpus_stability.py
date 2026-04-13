@@ -3,10 +3,13 @@ Mesure de la stabilité du corpus d'extraction.
 
 Deux analyses complémentaires :
 
-1. Bootstrap (N=20, subsample 35/44)
-   Pour chaque itération, on rééchantillonne 35 exemples par classe et on
-   ré-extrait le vecteur. On mesure cosine(vecteur_bootstrap, vecteur_complet).
+1. Subsampling (N=20, subsample 35/44 sans remise)
+   Pour chaque itération, on tire 35 exemples par classe sans remise et on
+   ré-extrait le vecteur. On mesure cosine(vecteur_subsample, vecteur_complet).
    → Répond à : "les résultats dépendent-ils de quelques phrases spécifiques ?"
+   Note : il s'agit de sous-échantillonnage sans remise, pas de bootstrap au sens
+   statistique (tirage avec remise). Cette procédure mesure la sensibilité du
+   vecteur à la composition du corpus, pas l'intervalle de confiance de la moyenne.
 
 2. Leave-one-out
    On retire une phrase à la fois et on mesure l'impact sur le vecteur.
@@ -34,7 +37,7 @@ from src.model_loader import ModelWrapper
 CORPUS_PATH = Path("data/corpus.json")
 VECTORS_DIR = Path("vectors")
 LAYER_IDX   = 20
-N_BOOTSTRAP = 20
+N_SUBSAMPLING = 20
 SUBSAMPLE_N = 35   # sur 44 — ~80 %
 
 
@@ -88,24 +91,27 @@ def cosine(a: torch.Tensor, b: torch.Tensor) -> float:
 # Bootstrap
 # ---------------------------------------------------------------------------
 
-def run_bootstrap(
+def run_subsampling(
     all_hiddens: dict[str, torch.Tensor],
     full_vectors: dict[str, torch.Tensor],
     emotions: list[str],
-    n_iterations: int = N_BOOTSTRAP,
+    n_iterations: int = N_SUBSAMPLING,
     subsample_n: int = SUBSAMPLE_N,
 ) -> dict[str, list[float]]:
     """
-    Rééchantillonne subsample_n/N exemples par classe, ré-extrait le vecteur,
-    mesure cosine avec le vecteur complet. Répété n_iterations fois.
+    Sous-échantillonnage sans remise : tire subsample_n/N exemples par classe,
+    ré-extrait le vecteur, mesure cosine avec le vecteur complet. Répété n_iterations fois.
 
     Les indices émotion et neutre sont tirés indépendamment à chaque itération
     pour capturer la variabilité des deux côtés de la soustraction contrastive.
+
+    Note : ceci est du sous-échantillonnage (sans remise), pas du bootstrap
+    statistique (avec remise). Il mesure la sensibilité aux exemples spécifiques.
     """
     results: dict[str, list[float]] = {e: [] for e in emotions}
     n_neutral = len(all_hiddens["neutral"])
 
-    print(f"\n[bootstrap] N={n_iterations}, subsample={subsample_n}/{len(all_hiddens[emotions[0]])}")
+    print(f"\n[subsampling] N={n_iterations}, subsample={subsample_n}/{len(all_hiddens[emotions[0]])}")
 
     for i in range(n_iterations):
         line_parts = []
@@ -128,7 +134,7 @@ def run_bootstrap(
     return results
 
 
-def report_bootstrap(results: dict[str, list[float]]) -> None:
+def report_subsampling(results: dict[str, list[float]]) -> None:
     thresholds = {
         "STABLE":   0.95,
         "MODÉRÉ":   0.90,
@@ -136,7 +142,7 @@ def report_bootstrap(results: dict[str, list[float]]) -> None:
     }
 
     print("\n" + "=" * 60)
-    print("BOOTSTRAP — STABILITÉ DU CORPUS")
+    print("SUBSAMPLING — STABILITÉ DU CORPUS")
     print("=" * 60)
 
     for emotion, cosines in results.items():
@@ -239,7 +245,7 @@ def report_leave_one_out(
 # ---------------------------------------------------------------------------
 
 def main(quick: bool = False) -> None:
-    n_iter = 5 if quick else N_BOOTSTRAP
+    n_iter = 5 if quick else N_SUBSAMPLING
 
     # Chargement corpus
     with open(CORPUS_PATH) as f:
@@ -268,9 +274,9 @@ def main(quick: bool = False) -> None:
     wrapper    = ModelWrapper()
     all_hiddens = encode_all(wrapper, by_label, LAYER_IDX)
 
-    # Bootstrap
-    bootstrap_results = run_bootstrap(all_hiddens, full_vectors, emotions, n_iterations=n_iter)
-    report_bootstrap(bootstrap_results)
+    # Subsampling
+    subsampling_results = run_subsampling(all_hiddens, full_vectors, emotions, n_iterations=n_iter)
+    report_subsampling(subsampling_results)
 
     # Leave-one-out
     loo_results = run_leave_one_out(all_hiddens, full_vectors, emotions, by_label)

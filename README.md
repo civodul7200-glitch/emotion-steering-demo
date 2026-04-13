@@ -21,7 +21,7 @@ This project was built to explore a concrete question raised by Anthropic's Apri
 
 6. **Joy and anger overlap in latent space.** cosine(joy, anger) = 0.7183. Both vectors share a large "arousal" component — in the training corpus, both emotions are expressed primarily through high-energy physical actions. This limits the anger vector's precision and explains its drift toward fear at high alpha.
 
-7. **The corpus is geometrically stable; instability comes from elsewhere.** Bootstrap resampling (N=20, subsample 35/44) gives cosine(bootstrap\_vector, full\_vector) = 0.9952 ± 0.0011 for anger and 0.9915 ± 0.0018 for joy. Leave-one-out analysis finds no outlier sentences (max pull = 0.0007). The vectors do not depend on specific examples. Observed instability in generation results from three distinct sources: generation stochasticity (temperature=0.7), the RLHF behavioral layer (refusals), and the classifier register gap (Hartmann trained on Twitter/Reddit, not literary narrative).
+7. **The corpus is geometrically stable; instability comes from elsewhere.** Subsampling stability analysis (N=20, subsample 35/44 without replacement) gives cosine(subsample\_vector, full\_vector) = 0.9952 ± 0.0011 for anger and 0.9915 ± 0.0018 for joy. Leave-one-out analysis finds no outlier sentences (max pull = 0.0007). The vectors do not depend on specific examples. Observed instability in generation results from three distinct sources: generation stochasticity (temperature=0.7), the RLHF behavioral layer (refusals), and the classifier register gap (Hartmann trained on Twitter/Reddit, not literary narrative).
 
 ---
 
@@ -115,7 +115,7 @@ emotion-steering-demo/
 │   ├── eval_latent.py          # latent_score(), llm_judge_score(), score_triple()
 │   ├── evaluate.py             # Offline script — measures delta(emotion score) per prompt
 │   ├── baseline.py             # Offline script — prompt-engineering vs steering comparison
-│   └── measure_corpus_stability.py  # Bootstrap + leave-one-out corpus stability analysis
+│   └── measure_corpus_stability.py  # Subsampling + leave-one-out corpus stability analysis
 │
 ├── web/
 │   ├── app.py                  # FastAPI backend (lifespan, 5 endpoints, semaphore, auto-retry)
@@ -388,13 +388,13 @@ Run with:
 python -m src.evaluate
 ```
 
-> **Reproducibility note:** Both scripts use `torch.manual_seed(42)` for consistent sampling. Generation uses `temperature=0.7` with no beam search. In practice, delta scores vary by ~±0.05 between runs due to hardware-level non-determinism on MPS. Treat reported values as indicative, not exact.
+> **Reproducibility note:** `torch.manual_seed(42)` is called but MPS does not honour it for sampling operations — results vary between runs due to hardware-level non-determinism. Generation uses `temperature=0.7` with no beam search. Delta scores vary by ~±0.05 between runs. Treat reported values as indicative, not exact.
 
 ### `src/measure_corpus_stability.py` — corpus stability analysis
 
 Measures whether the steering vectors depend on specific corpus examples. Two analyses:
 
-**Bootstrap (N=20, subsample 35/44):** Re-extracts vectors from random 80% subsets of the corpus, measures `cosine(bootstrap_vector, full_vector)`. All 132 forward passes are computed once; bootstrap iterations are pure tensor operations.
+**Subsampling (N=20, subsample 35/44 without replacement):** Re-extracts vectors from random 80% subsets of the corpus, measures `cosine(subsample_vector, full_vector)`. All 132 forward passes are computed once; subsampling iterations are pure tensor operations. Note: this is subsampling without replacement, not statistical bootstrap (which samples with replacement); it measures sensitivity to corpus composition, not confidence intervals.
 
 **Leave-one-out:** Removes each sentence individually, re-extracts the vector, measures `pull = 1 − cosine`. Identifies sentences that disproportionately influence the vector direction.
 
@@ -405,7 +405,7 @@ python -m src.measure_corpus_stability --quick  # N=5 iterations, ~2 min
 
 Measured results on the current corpus (`data/corpus.json`, 44 examples per class):
 
-| Vector | Bootstrap mean | Bootstrap std | Max pull (LOO) | Verdict |
+| Vector | Subsample mean | Subsample std | Max pull (LOO) | Verdict |
 |--------|---------------|---------------|----------------|---------|
 | anger  | 0.9952        | 0.0011        | 0.0007         | STABLE ✓ |
 | joy    | 0.9915        | 0.0018        | 0.0007         | STABLE ✓ |
@@ -421,7 +421,7 @@ Compares three conditions for each prompt:
 - **Prompted** — system message: *"Respond in a joyful/angry tone"*
 - **Steered** — activation vector at alpha=2.0
 
-Prints a table showing which method produces a larger emotional shift per prompt. This provides honest context for when steering outperforms simple prompting and when it does not.
+Prints a table showing which method produces a larger emotional shift per prompt. **Caveat:** results are based on a single generation per condition at `temperature=0.7` — the winning method can change on a rerun. Treat the output as an exploratory comparison, not a statistically grounded benchmark.
 
 Run with:
 ```bash
@@ -536,7 +536,7 @@ This section is written to help a language model reason about this codebase quic
 | `src/eval_latent.py` | Triple evaluation (latent cosine, LLM judge, score_triple) | `latent_score()`, `llm_judge_score()`, `score_triple()` |
 | `src/evaluate.py` | Offline delta-score evaluation | `evaluate()` |
 | `src/baseline.py` | Offline prompt-engineering comparison | `run_baseline()` |
-| `src/measure_corpus_stability.py` | Bootstrap + leave-one-out corpus stability | `main()` |
+| `src/measure_corpus_stability.py` | Subsampling + leave-one-out corpus stability | `main()` |
 | `web/app.py` | FastAPI server, async wrapper, lifespan, auto-retry | `app` (FastAPI instance) |
 
 ### Global state in `web/app.py`

@@ -31,16 +31,60 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 2rem 1rem;
+      padding: 2rem 1rem 4rem;
     }
 
+    /* ── Header ── */
     header {
-      max-width: 1100px;
+      max-width: 860px;
       margin: 0 auto 2rem;
     }
-    header h1 { font-size: 1.5rem; font-weight: 700; }
-    header p  { color: var(--muted); font-size: .9rem; margin-top: .25rem; }
 
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: .4rem;
+    }
+
+    header .tagline {
+      color: var(--muted);
+      font-size: .9rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Collapsible explanation */
+    details {
+      background: var(--accent-bg);
+      border: 1px solid #c7d2fe;
+      border-radius: var(--radius);
+      padding: .75rem 1rem;
+      font-size: .88rem;
+    }
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--accent);
+      list-style: none;
+      user-select: none;
+    }
+    details summary::before { content: "▶ "; font-size: .7rem; }
+    details[open] summary::before { content: "▼ "; }
+    details .explanation {
+      margin-top: .75rem;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    details .explanation strong { color: var(--accent); }
+    details .explanation ul {
+      padding-left: 1.2rem;
+      margin-top: .2rem;
+    }
+    details .explanation li { margin-bottom: .2rem; }
+
+    /* ── Card ── */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -50,31 +94,64 @@
 
     /* ── Controls ── */
     .controls {
-      max-width: 1100px;
+      max-width: 860px;
       margin: 0 auto 1.5rem;
+    }
+
+    .field-label {
+      font-size: .78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: .35rem;
+      display: block;
     }
 
     textarea {
       width: 100%;
-      height: 80px;
+      height: 72px;
       resize: vertical;
-      padding: .75rem;
+      padding: .7rem .85rem;
       border: 1px solid var(--border);
       border-radius: 6px;
       font-size: .95rem;
       font-family: inherit;
-      margin-bottom: 1rem;
+      color: var(--text);
     }
     textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
 
-    .row {
+    /* Example prompts */
+    .prompt-chips {
       display: flex;
-      align-items: center;
-      gap: 1.25rem;
       flex-wrap: wrap;
+      gap: .4rem;
+      margin: .6rem 0 1.25rem;
+    }
+    .chip {
+      font-size: .78rem;
+      padding: .25rem .65rem;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      background: var(--surface);
+      cursor: pointer;
+      color: var(--muted);
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-bg);
     }
 
-    label { font-size: .85rem; color: var(--muted); font-weight: 500; }
+    /* Controls row */
+    .row {
+      display: flex;
+      align-items: flex-end;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
 
     select {
       padding: .45rem .75rem;
@@ -83,34 +160,33 @@
       font-size: .9rem;
       background: var(--surface);
       cursor: pointer;
+      color: var(--text);
     }
 
-    .alpha-wrap {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-    }
+    /* Alpha slider */
+    .alpha-wrap { display: flex; align-items: center; gap: .6rem; }
     input[type=range] {
-      width: 120px;
+      width: 130px;
       accent-color: var(--accent);
       cursor: pointer;
     }
     .alpha-value {
-      font-size: .85rem;
-      font-weight: 600;
+      font-size: .9rem;
+      font-weight: 700;
       color: var(--accent);
-      min-width: 2ch;
+      min-width: 2.5ch;
     }
-    .alpha-warn {
-      font-size: .78rem;
-      color: #b45309;
+    .alpha-hint {
+      font-size: .75rem;
+      color: var(--muted);
       margin-top: .3rem;
-      display: none;
     }
+    .alpha-hint.warn { color: #b45309; }
 
+    /* Generate button */
     button#generate-btn {
       margin-left: auto;
-      padding: .55rem 1.5rem;
+      padding: .55rem 1.75rem;
       background: var(--accent);
       color: #fff;
       border: none;
@@ -119,61 +195,101 @@
       font-weight: 600;
       cursor: pointer;
       transition: opacity .15s;
+      white-space: nowrap;
     }
     button#generate-btn:disabled { opacity: .5; cursor: not-allowed; }
     button#generate-btn:hover:not(:disabled) { opacity: .88; }
 
     /* ── Results grid ── */
     .results {
-      max-width: 1100px;
+      max-width: 860px;
       margin: 0 auto;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.25rem;
     }
-    @media (max-width: 680px) { .results { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) { .results { grid-template-columns: 1fr; } }
 
+    /* Column header */
     .col-header {
-      font-size: .75rem;
+      margin-bottom: .9rem;
+    }
+    .col-title {
+      font-size: .8rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .08em;
       color: var(--muted);
-      margin-bottom: .75rem;
     }
-    .col-header span {
-      padding: .2rem .5rem;
+    .col-title .badge {
+      display: inline-block;
+      margin-left: .35rem;
+      padding: .15rem .45rem;
       border-radius: 4px;
       background: var(--accent-bg);
       color: var(--accent);
+      font-size: .72rem;
+    }
+    .col-subtitle {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: .2rem;
     }
 
+    /* Output text */
     .output-text {
       font-size: .9rem;
-      line-height: 1.65;
+      line-height: 1.7;
       color: var(--text);
       min-height: 80px;
       white-space: pre-wrap;
     }
     .output-text.placeholder { color: var(--muted); font-style: italic; }
 
-    /* ── Score bars ── */
-    .scores { margin-top: 1.25rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+    /* ── Hartmann score bars ── */
+    .scores-section {
+      margin-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+    .section-title {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      margin-bottom: .6rem;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .section-title .info {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--muted);
+      font-size: .65rem;
+      text-align: center;
+      line-height: 14px;
+      cursor: help;
+      font-style: normal;
+    }
 
     .score-row {
       display: grid;
-      grid-template-columns: 72px 1fr 44px;
+      grid-template-columns: 68px 1fr 40px;
       align-items: center;
-      gap: .5rem;
-      margin-bottom: .45rem;
+      gap: .45rem;
+      margin-bottom: .4rem;
       border-radius: 4px;
-      padding: .15rem .3rem;
+      padding: .12rem .3rem;
       transition: background .15s;
     }
     .score-row.target { background: #fef9ee; }
 
     .score-label {
-      font-size: .78rem;
+      font-size: .76rem;
       text-transform: capitalize;
       color: var(--muted);
       font-weight: 500;
@@ -181,40 +297,132 @@
     .score-row.target .score-label { color: var(--text); font-weight: 700; }
 
     .bar-track {
-      height: 8px;
+      height: 7px;
       background: var(--bg);
       border-radius: 99px;
       overflow: hidden;
     }
-    .bar {
-      height: 100%;
-      border-radius: 99px;
-      transition: width .4s ease;
-    }
+    .bar { height: 100%; border-radius: 99px; transition: width .4s ease; }
 
     .score-pct {
-      font-size: .78rem;
+      font-size: .75rem;
       text-align: right;
       color: var(--muted);
     }
     .score-row.target .score-pct { font-weight: 700; color: var(--text); }
 
+    /* ── Steering evaluation section ── */
+    .eval-section {
+      margin-top: 1rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      display: none;   /* shown after steered generation */
+    }
+
+    .eval-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .7rem;
+    }
+    .eval-label-wrap { flex: 0 0 auto; min-width: 130px; }
+    .eval-label {
+      font-size: .76rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .eval-sublabel {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-top: .1rem;
+    }
+    .eval-bar-wrap { flex: 1; }
+    .eval-bar-track {
+      height: 9px;
+      background: var(--bg);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .eval-bar {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--accent);
+      transition: width .5s ease;
+    }
+    .eval-value {
+      flex: 0 0 auto;
+      min-width: 38px;
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: right;
+    }
+
+    /* LLM judge button */
+    .judge-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .3rem;
+    }
+    button#analyze-btn {
+      padding: .3rem .9rem;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 6px;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    button#analyze-btn:hover:not(:disabled) {
+      background: var(--accent-bg);
+    }
+    button#analyze-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .judge-result {
+      flex: 1;
+      font-size: .82rem;
+    }
+    .judge-value {
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .judge-pending {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Gap callout */
+    .gap-note {
+      margin-top: .75rem;
+      padding: .55rem .75rem;
+      background: var(--accent-bg);
+      border-radius: 6px;
+      font-size: .76rem;
+      color: var(--accent);
+      display: none;
+    }
+
     /* ── Loading spinner ── */
     .spinner {
       display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid #fff;
+      width: 13px; height: 13px;
+      border: 2px solid currentColor;
       border-top-color: transparent;
       border-radius: 50%;
       animation: spin .6s linear infinite;
       vertical-align: middle;
-      margin-right: .4rem;
+      margin-right: .35rem;
+      opacity: .6;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Error ── */
+    /* ── Error bar ── */
     .error-bar {
-      max-width: 1100px;
+      max-width: 860px;
       margin: 0 auto 1rem;
       padding: .75rem 1rem;
       background: #fef2f2;
@@ -228,17 +436,56 @@
 </head>
 <body>
 
+<!-- ── Header ─────────────────────────────────── -->
 <header>
   <h1>Emotion Steering Demo</h1>
-  <p>Activation steering on Qwen2.5-1.5B-Instruct — latent vector injection at layer 20</p>
+  <p class="tagline">Injecting emotion directly into a language model's internal state — without instructions.</p>
+
+  <details>
+    <summary>How does this work?</summary>
+    <div class="explanation">
+      <p>
+        Normally you'd tell a model <em>"write this in a joyful tone"</em> via a system prompt.
+        Here we do something different: we extract a mathematical <strong>emotion direction</strong>
+        from the model's internal space and inject it directly into the network's hidden layers
+        as it generates — bypassing the instruction interface entirely.
+      </p>
+      <p><strong>What you control:</strong></p>
+      <ul>
+        <li><strong>Emotion</strong> — which direction to inject (joy or anger)</li>
+        <li><strong>Alpha</strong> — how strongly to inject it (intensity of the intervention)</li>
+        <li><strong>Prompt</strong> — the story seed the model continues</li>
+      </ul>
+      <p><strong>How we measure the effect — three ways:</strong></p>
+      <ul>
+        <li><strong>Surface score</strong> — a classifier reads the text and detects explicit emotion words</li>
+        <li><strong>Internal alignment</strong> — we measure how much the model's hidden state at layer 20 aligned with the emotion vector, even if the text doesn't use obvious emotion words</li>
+        <li><strong>AI narrative judge</strong> — the model reads its own output and rates the emotional intensity as a reader would</li>
+      </ul>
+      <p>
+        The gap between these three scores is what's interesting: sometimes the emotion is
+        internally present but not yet expressed on the surface.
+      </p>
+    </div>
+  </details>
 </header>
 
+<!-- ── Controls ───────────────────────────────── -->
 <div class="card controls">
+
+  <label class="field-label" for="prompt">Story prompt</label>
   <textarea id="prompt" placeholder="Continue this story: She opened the envelope slowly and read the first line.">Continue this story: She opened the envelope slowly and read the first line.</textarea>
+
+  <div class="prompt-chips" id="prompt-chips">
+    <span class="chip" data-prompt="Continue this story: She opened the envelope slowly and read the first line.">Envelope</span>
+    <span class="chip" data-prompt="Continue this story: He finally got the call he had been waiting for.">The call</span>
+    <span class="chip" data-prompt="Continue this story: He found the old photograph at the bottom of the drawer.">Old photograph</span>
+    <span class="chip" data-prompt="Continue this story: He walked through the park, thinking back on everything that had happened.">Park walk</span>
+  </div>
 
   <div class="row">
     <div>
-      <label for="emotion">Emotion</label><br/>
+      <label class="field-label" for="emotion">Emotion to inject</label>
       <select id="emotion">
         <option value="joy">Joy</option>
         <option value="anger">Anger</option>
@@ -246,12 +493,12 @@
     </div>
 
     <div>
-      <label for="alpha">Alpha (intensity)</label><br/>
+      <label class="field-label" for="alpha">Injection strength (alpha)</label>
       <div class="alpha-wrap">
-        <input type="range" id="alpha" min="0.5" max="5" step="0.5" value="2" />
-        <span class="alpha-value" id="alpha-display">2.0</span>
+        <input type="range" id="alpha" min="0.5" max="5" step="0.5" value="1.5" />
+        <span class="alpha-value" id="alpha-display">1.5</span>
       </div>
-      <div class="alpha-warn" id="alpha-warn">⚠ alpha &lt; 1.5 may trigger refusals</div>
+      <div class="alpha-hint" id="alpha-hint">Recommended: 1.5–2.5 for coherent output</div>
     </div>
 
     <button id="generate-btn" onclick="generate()">Generate</button>
@@ -260,19 +507,82 @@
 
 <div class="error-bar" id="error-bar"></div>
 
+<!-- ── Results ────────────────────────────────── -->
 <div class="results">
+
+  <!-- Left: base -->
   <div class="card" id="col-base">
-    <div class="col-header">Base</div>
+    <div class="col-header">
+      <div class="col-title">Without steering</div>
+      <div class="col-subtitle">Default model output — no emotional intervention</div>
+    </div>
     <div class="output-text placeholder" id="text-base">Result will appear here.</div>
-    <div class="scores" id="scores-base" style="display:none"></div>
+    <div class="scores-section" id="scores-base" style="display:none">
+      <div class="section-title">
+        Surface emotion detector
+        <i class="info" title="Hartmann classifier — detects explicit emotion words in the text. Trained on Twitter/Reddit, not literary prose.">?</i>
+      </div>
+      <div id="bars-base"></div>
+    </div>
   </div>
 
+  <!-- Right: steered -->
   <div class="card" id="col-steered">
-    <div class="col-header">Steered — <span id="steered-label">Joy</span></div>
+    <div class="col-header">
+      <div class="col-title">With <span id="steered-label">Joy</span> steering <span class="badge" id="alpha-badge">α 1.5</span></div>
+      <div class="col-subtitle">Emotion vector injected at layer 20 of the network <span id="retry-note" style="display:none; color:var(--muted); font-style:italic;"></span></div>
+    </div>
     <div class="output-text placeholder" id="text-steered">Result will appear here.</div>
-    <div class="scores" id="scores-steered" style="display:none"></div>
+
+    <!-- Hartmann bars (steered) -->
+    <div class="scores-section" id="scores-steered" style="display:none">
+      <div class="section-title">
+        Surface emotion detector
+        <i class="info" title="Hartmann classifier — reads explicit emotion words. May miss subtle narrative emotion.">?</i>
+      </div>
+      <div id="bars-steered"></div>
+    </div>
+
+    <!-- Steering evaluation (latent + judge) -->
+    <div class="eval-section" id="eval-section">
+      <div class="section-title">
+        Steering evaluation
+        <i class="info" title="Two deeper measures: internal alignment (hidden state) and AI narrative judgment.">?</i>
+      </div>
+
+      <!-- Latent alignment -->
+      <div class="eval-row">
+        <div class="eval-label-wrap">
+          <div class="eval-label">Internal alignment</div>
+          <div class="eval-sublabel">Cosine · layer 20</div>
+        </div>
+        <div class="eval-bar-wrap">
+          <div class="eval-bar-track">
+            <div class="eval-bar" id="latent-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="eval-value" id="latent-value">—</div>
+      </div>
+
+      <!-- LLM judge -->
+      <div class="judge-row">
+        <div class="eval-label-wrap">
+          <div class="eval-label">AI narrative judge</div>
+          <div class="eval-sublabel">Model reads its output</div>
+        </div>
+        <button id="analyze-btn" onclick="analyze()">Analyze →</button>
+        <div class="judge-result">
+          <span class="judge-pending" id="judge-pending">Click to ask the model to rate its own output</span>
+          <span class="judge-value" id="judge-value" style="display:none"></span>
+        </div>
+      </div>
+
+      <!-- Gap note -->
+      <div class="gap-note" id="gap-note"></div>
+    </div>
   </div>
-</div>
+
+</div><!-- .results -->
 
 <script>
   const API = window.location.origin;
@@ -287,36 +597,92 @@
     surprise: 'var(--c-surprise)',
   };
 
-  // Sync alpha slider label
+  // State for analyze button
+  let _lastSteeredText = null;
+  let _lastEmotion     = null;
+  let _lastLatent      = null;
+  let _lastHartmann    = null;
+
+  // ── Example prompt chips ──
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.getElementById('prompt').value = chip.dataset.prompt;
+    });
+  });
+
+  // ── Alpha slider ──
   document.getElementById('alpha').addEventListener('input', e => {
     const v = parseFloat(e.target.value);
     document.getElementById('alpha-display').textContent = v.toFixed(1);
-    document.getElementById('alpha-warn').style.display = v < 1.5 ? 'block' : 'none';
+    document.getElementById('alpha-badge').textContent = `α ${v.toFixed(1)}`;
+    const hint = document.getElementById('alpha-hint');
+    if (v <= 1.0) {
+      hint.textContent = 'Very subtle — effect may not be visible';
+      hint.className = 'alpha-hint';
+    } else if (v <= 2.5) {
+      hint.textContent = 'Recommended range — clear effect, coherent output';
+      hint.className = 'alpha-hint';
+    } else if (v <= 3.0) {
+      hint.textContent = 'Strong — narrative may drift or shift genre';
+      hint.className = 'alpha-hint warn';
+    } else {
+      hint.textContent = '⚠ Risk of incoherence: mixed languages, repetition loops';
+      hint.className = 'alpha-hint warn';
+    }
   });
 
-  function renderScores(containerId, scores, targetEmotion) {
+  // ── Render Hartmann bars ──
+  function renderBars(containerId, scores, targetEmotion) {
     const container = document.getElementById(containerId);
     const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-
     container.innerHTML = sorted.map(([emotion, score]) => `
       <div class="score-row ${emotion === targetEmotion ? 'target' : ''}">
         <span class="score-label">${emotion}</span>
         <div class="bar-track">
-          <div class="bar" style="width:${(score * 100).toFixed(1)}%; background:${EMOTION_COLORS[emotion] || '#ccc'}"></div>
+          <div class="bar" style="width:${(score*100).toFixed(1)}%;background:${EMOTION_COLORS[emotion]||'#ccc'}"></div>
         </div>
-        <span class="score-pct">${(score * 100).toFixed(1)}%</span>
+        <span class="score-pct">${(score*100).toFixed(0)}%</span>
       </div>
     `).join('');
-
-    container.style.display = 'block';
   }
 
+  // ── Render latent alignment ──
+  function renderLatent(score) {
+    // score in [-1, 1], display normalized to [0, 100]%
+    const pct = Math.max(0, Math.min(1, (score + 1) / 2)) * 100;
+    document.getElementById('latent-bar').style.width = pct.toFixed(1) + '%';
+    document.getElementById('latent-value').textContent = score.toFixed(2);
+  }
+
+  // ── Gap interpretation ──
+  function showGapNote(latent, hartmann, judge) {
+    const note = document.getElementById('gap-note');
+    const gap = latent - hartmann;
+
+    let msg = '';
+    if (latent >= 0.5 && hartmann < 0.3) {
+      msg = '→ High internal alignment, low surface score: the emotion is encoded in the model\'s hidden state but without explicit emotion words — a signature of subtle steering.';
+    } else if (judge !== null && judge >= 0.6 && hartmann < 0.3) {
+      msg = '→ The AI judge detects the emotion narratively, but the surface classifier misses it — the text is emotionally readable without using obvious emotion vocabulary.';
+    } else if (latent >= 0.5 && (judge === null || judge >= 0.5) && hartmann >= 0.5) {
+      msg = '→ All three measures agree: the steering was effective and fully expressed.';
+    } else if (latent < 0.2 && hartmann >= 0.5) {
+      msg = '→ High surface score, low internal alignment: the emotional vocabulary may be prompt-driven rather than from the steering vector.';
+    }
+
+    if (msg) {
+      note.textContent = msg;
+      note.style.display = 'block';
+    } else {
+      note.style.display = 'none';
+    }
+  }
+
+  // ── Utilities ──
   function setLoading(on) {
     const btn = document.getElementById('generate-btn');
     btn.disabled = on;
-    btn.innerHTML = on
-      ? '<span class="spinner"></span>Generating…'
-      : 'Generate';
+    btn.innerHTML = on ? '<span class="spinner"></span>Generating…' : 'Generate';
   }
 
   function showError(msg) {
@@ -337,46 +703,96 @@
     el.classList.remove('placeholder');
   }
 
+  // Reset analyze state
+  function resetAnalyze() {
+    _lastSteeredText = null;
+    _lastEmotion = null;
+    _lastLatent = null;
+    _lastHartmann = null;
+    document.getElementById('judge-pending').textContent = 'Click to ask the model to rate its own output';
+    document.getElementById('judge-pending').style.display = 'inline';
+    document.getElementById('judge-value').style.display = 'none';
+    document.getElementById('analyze-btn').disabled = true;
+    document.getElementById('analyze-btn').textContent = 'Analyze →';
+    document.getElementById('gap-note').style.display = 'none';
+  }
+
+  // ── Main generate ──
   async function generate() {
-    const prompt   = document.getElementById('prompt').value.trim();
-    const emotion  = document.getElementById('emotion').value;
-    const alpha    = parseFloat(document.getElementById('alpha').value);
+    const prompt  = document.getElementById('prompt').value.trim();
+    const emotion = document.getElementById('emotion').value;
+    const alpha   = parseFloat(document.getElementById('alpha').value);
 
     if (!prompt) { showError('Please enter a prompt.'); return; }
 
     showError('');
     setLoading(true);
+    resetAnalyze();
+
     setPlaceholder('text-base',    'Generating…');
     setPlaceholder('text-steered', 'Generating…');
     document.getElementById('scores-base').style.display    = 'none';
     document.getElementById('scores-steered').style.display = 'none';
+    document.getElementById('eval-section').style.display   = 'none';
 
     // Update steered column header
     document.getElementById('steered-label').textContent =
       emotion.charAt(0).toUpperCase() + emotion.slice(1);
+    document.getElementById('alpha-badge').textContent = `α ${alpha.toFixed(1)}`;
 
     try {
       const [baseRes, steeredRes] = await Promise.all([
         fetch(`${API}/generate_base`, {
-          method: 'POST',
+          method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, max_new_tokens: 120 }),
+          body:    JSON.stringify({ prompt, max_new_tokens: 120 }),
         }).then(r => r.json()),
 
         fetch(`${API}/generate_steered`, {
-          method: 'POST',
+          method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, emotion, alpha, max_new_tokens: 120 }),
+          body:    JSON.stringify({ prompt, emotion, alpha, max_new_tokens: 120 }),
         }).then(r => r.json()),
       ]);
 
       if (baseRes.detail)    throw new Error(baseRes.detail);
       if (steeredRes.detail) throw new Error(steeredRes.detail);
 
-      setResult('text-base',    baseRes.text);
+      // Base column
+      setResult('text-base', baseRes.text);
+      renderBars('bars-base', baseRes.scores, null);
+      document.getElementById('scores-base').style.display = 'block';
+
+      // Steered column
       setResult('text-steered', steeredRes.text);
-      renderScores('scores-base',    baseRes.scores,    null);
-      renderScores('scores-steered', steeredRes.scores, emotion);
+      renderBars('bars-steered', steeredRes.scores, emotion);
+      document.getElementById('scores-steered').style.display = 'block';
+
+      // Retry note
+      const retryNote = document.getElementById('retry-note');
+      if (steeredRes.attempts && steeredRes.attempts > 1) {
+        retryNote.textContent = `· retried ${steeredRes.attempts - 1}×`;
+        retryNote.style.display = 'inline';
+      } else {
+        retryNote.style.display = 'none';
+      }
+
+      // Latent score
+      if (steeredRes.latent !== null && steeredRes.latent !== undefined) {
+        renderLatent(steeredRes.latent);
+        _lastLatent = steeredRes.latent;
+      }
+
+      // Store state for analyze
+      _lastSteeredText = steeredRes.text;
+      _lastEmotion = emotion;
+      _lastHartmann = steeredRes.scores[emotion] || 0;
+
+      document.getElementById('eval-section').style.display = 'block';
+      document.getElementById('analyze-btn').disabled = false;
+
+      // Initial gap note (without judge)
+      showGapNote(_lastLatent || 0, _lastHartmann, null);
 
     } catch (err) {
       showError(`Error: ${err.message}`);
@@ -387,7 +803,47 @@
     }
   }
 
-  // Populate emotion select from API on load
+  // ── LLM judge ──
+  async function analyze() {
+    if (!_lastSteeredText || !_lastEmotion) return;
+
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Analyzing…';
+    document.getElementById('judge-pending').textContent = 'The model is reading its own output…';
+    document.getElementById('judge-pending').style.display = 'inline';
+    document.getElementById('judge-value').style.display = 'none';
+
+    try {
+      const res = await fetch(`${API}/analyze`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ text: _lastSteeredText, emotion: _lastEmotion }),
+      }).then(r => r.json());
+
+      const judge = res.llm_judge;
+      document.getElementById('judge-pending').style.display = 'none';
+
+      const valueEl = document.getElementById('judge-value');
+      if (judge !== null && judge !== undefined) {
+        valueEl.textContent = `${(judge * 100).toFixed(0)}%`;
+        valueEl.style.display = 'inline';
+        showGapNote(_lastLatent || 0, _lastHartmann, judge);
+      } else {
+        document.getElementById('judge-pending').textContent = 'Could not parse a score from the model.';
+        document.getElementById('judge-pending').style.display = 'inline';
+      }
+
+    } catch (err) {
+      document.getElementById('judge-pending').textContent = `Error: ${err.message}`;
+      document.getElementById('judge-pending').style.display = 'inline';
+    } finally {
+      btn.textContent = 'Analyze →';
+      btn.disabled = false;
+    }
+  }
+
+  // ── Load emotion options from API ──
   fetch(`${API}/emotions`)
     .then(r => r.json())
     .then(emotions => {
@@ -396,7 +852,7 @@
         .map(e => `<option value="${e.name}">${e.label}</option>`)
         .join('');
     })
-    .catch(() => {}); // silently keep hardcoded defaults if API not ready
+    .catch(() => {});
 </script>
 </body>
 </html>

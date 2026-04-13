@@ -76,7 +76,9 @@ def client():
     app.router.lifespan_context = mock_lifespan
 
     with patch("web.app._generate_base",    return_value=FAKE_GENERATED_TEXT), \
-         patch("web.app._generate_steered", return_value=FAKE_GENERATED_TEXT):
+         patch("web.app._generate_steered", return_value=FAKE_GENERATED_TEXT), \
+         patch("web.app._latent_score",     return_value=0.42), \
+         patch("web.app._llm_judge_score",  return_value=0.75):
         with TestClient(app) as c:
             yield c
 
@@ -213,4 +215,29 @@ class TestGenerateSteered:
         data = client.post("/generate_steered", json={
             "prompt": "Hello", "emotion": "joy", "alpha": 2.0
         }).json()
-        assert set(data.keys()) == {"text", "scores"}
+        assert {"text", "scores", "latent"} <= set(data.keys())
+
+    def test_latent_field_is_float(self, client):
+        data = client.post("/generate_steered", json={
+            "prompt": "Hello", "emotion": "joy", "alpha": 2.0
+        }).json()
+        assert isinstance(data["latent"], float)
+
+
+# ---------------------------------------------------------------------------
+# /analyze
+# ---------------------------------------------------------------------------
+
+class TestAnalyze:
+    def test_success(self, client):
+        r = client.post("/analyze", json={"text": FAKE_GENERATED_TEXT, "emotion": "joy"})
+        assert r.status_code == 200
+        assert "llm_judge" in r.json()
+
+    def test_llm_judge_is_float(self, client):
+        data = client.post("/analyze", json={"text": FAKE_GENERATED_TEXT, "emotion": "joy"}).json()
+        assert isinstance(data["llm_judge"], float)
+
+    def test_unknown_emotion_returns_400(self, client):
+        r = client.post("/analyze", json={"text": "some text", "emotion": "surprise"})
+        assert r.status_code == 400

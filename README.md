@@ -51,8 +51,13 @@ The system generates two responses in parallel:
 - **Base** — standard generation, no intervention.
 - **Steered** — same generation, but a direction vector is added to the hidden states of layer 20 at every forward pass during decoding. This shifts the model's internal representation toward joy or anger, causing the output tone to change accordingly.
 
-The generated texts are then scored by a separate emotion classifier
-(`j-hartmann/emotion-english-distilroberta-base`, 7 classes) and the scores are displayed as bar charts in the UI.
+If the steered generation triggers an RLHF safety refusal (detected by prefix matching), the backend retries silently up to 3 times. The number of attempts is returned in the response and shown in the UI.
+
+Each steered output is evaluated with three independent measures:
+
+- **Surface detector** — `j-hartmann/emotion-english-distilroberta-base` (7 classes), trained on Twitter/Reddit, reads explicit emotional vocabulary.
+- **Internal alignment** — cosine similarity between the generated text's hidden representation at layer 20 (seq mean) and the steering vector. Measures whether the emotion is encoded internally, independent of surface vocabulary.
+- **AI narrative judge** — the model evaluates its own output at temperature=0.1. Understands literary register where the surface classifier fails.
 
 ---
 
@@ -105,11 +110,12 @@ emotion-steering-demo/
 │   ├── hooks.py                # ActivationCapture + count_active_hooks()
 │   ├── steering.py             # generate_base() and generate_steered() + SteeringHook
 │   ├── extract_vectors.py      # Offline script — computes and saves steering vectors
+│   ├── eval_latent.py          # latent_score(), llm_judge_score(), score_triple()
 │   ├── evaluate.py             # Offline script — measures delta(emotion score) per prompt
 │   └── baseline.py             # Offline script — prompt-engineering vs steering comparison
 │
 ├── web/
-│   ├── app.py                  # FastAPI backend (lifespan, 4 endpoints, semaphore)
+│   ├── app.py                  # FastAPI backend (lifespan, 5 endpoints, semaphore, auto-retry)
 │   └── index.html              # Single-page UI (vanilla JS, fetch API)
 │
 ├── vectors/
@@ -118,7 +124,7 @@ emotion-steering-demo/
 │
 ├── data/
 │   ├── corpus.json             # 132 narrative sentences (44 × joy/anger/neutral)
-│   └── golden_set.json         # 11 manually evaluated prompts with behavioral notes
+│   └── golden_set.json         # 13 manually evaluated prompts with behavioral notes
 │
 ├── tests/
 │   ├── test_steering.py        # Unit tests — hooks, vectors, generation functions
@@ -279,7 +285,7 @@ Standard generation without steering.
 
 ### `POST /generate_steered`
 
-Generation with a steering vector injected at layer 20.
+Generation with a steering vector injected at layer 20. Retries silently up to 3 times if the output is detected as an RLHF refusal (prefix matching against a fixed list).
 
 **Request body:**
 
@@ -290,10 +296,55 @@ Generation with a steering vector injected at layer 20.
 | `alpha`          | float   | 2.0     | 0.1 ≤ α ≤ 10.0    |
 | `max_new_tokens` | integer | 120     | 20 ≤ n ≤ 400      |
 
-**Response:** same schema as `/generate_base`.
+**Response:**
+
+```json
+{
+  "text": "She tore the letter open, her hands trembling...",
+  "scores": {
+    "joy": 0.0412,
+    "anger": 0.8821,
+    "neutral": 0.0312,
+    "fear": 0.0201,
+    "sadness": 0.0154,
+    "disgust": 0.0071,
+    "surprise": 0.0029
+  },
+  "latent": 0.2341,
+  "attempts": 1
+}
+```
+
+- `latent` — cosine similarity between the text's hidden representation (seq mean, layer 20) and the steering vector. Range: [-1, 1]. `null` on error.
+- `attempts` — number of generation attempts before a non-refusal output was returned (1 = no retry needed, 3 = all retries exhausted and last response is returned as-is).
 
 **Error (400):** if `emotion` is not a known vector name.
 **Error (422):** if `alpha` or `max_new_tokens` are out of bounds.
+
+---
+
+### `POST /analyze`
+
+Runs the LLM judge on an already-generated text. Called separately from the UI after the user requests it (slow — requires a full generation pass at temperature=0.1).
+
+**Request body:**
+
+| Field     | Type   | Constraints                    |
+|-----------|--------|--------------------------------|
+| `text`    | string | required                       |
+| `emotion` | string | `"joy"` or `"anger"`, required |
+
+**Response:**
+
+```json
+{
+  "llm_judge": 0.75
+}
+```
+
+- `llm_judge` — float in [0, 1] representing the model's self-rated emotional intensity. `null` if the model's output cannot be parsed as a number.
+
+**Error (400):** if `emotion` is not a known vector name.
 
 ---
 
@@ -359,7 +410,7 @@ source .venv/bin/activate
 pytest tests/ -v
 ```
 
-Expected output: **35 tests, all passing**, in ~2–3 seconds (no model loaded).
+Expected output: **39 tests, all passing**, in ~2–3 seconds (no model loaded).
 
 ### Test structure
 
@@ -374,9 +425,10 @@ Expected output: **35 tests, all passing**, in ~2–3 seconds (no model loaded).
 - `TestHealth` — status, device field, emotion list
 - `TestEmotions` — response schema
 - `TestGenerateBase` — success, response schema, Pydantic validation on `max_new_tokens`
-- `TestGenerateSteered` — success (joy/anger), unknown emotion → 400, out-of-range alpha → 422, score sum ≈ 1.0
+- `TestGenerateSteered` — success (joy/anger), unknown emotion → 400, out-of-range alpha → 422, score sum ≈ 1.0, latent field present and is float
+- `TestAnalyze` — success, llm_judge is float, unknown emotion → 400
 
-The mock setup patches `_generate_base` and `_generate_steered` in `web.app` directly so no tokenizer or model object is needed for API tests.
+The mock setup patches `_generate_base`, `_generate_steered`, `_latent_score`, and `_llm_judge_score` in `web.app` directly so no tokenizer or model object is needed for API tests.
 
 ---
 
@@ -384,25 +436,41 @@ The mock setup patches `_generate_base` and `_generate_steered` in `web.app` dir
 
 > **Note on "emotion" terminology.** The terms *joy* and *anger* are shorthand for latent directions extracted from a small, domain-specific corpus. These directions capture patterns in vocabulary, syntax, and narrative register statistically associated with emotional language — not internal emotional states of the model. The classifier scores measure surface-level linguistic similarity to emotional text, not ground-truth affect. Interpret all results as stylistic shifts, not as evidence of model emotion or reasoning about affect.
 
+### Auto-retry on refusals
+
+RLHF safety refusals are detected by prefix matching against a fixed list (e.g. "I'm sorry, but", "I cannot", "As an AI", etc.). When a refusal is detected, `generate_steered` retries silently up to **3 times**. The `attempts` field in the response records how many runs were needed. Because generation uses `temperature=0.7`, each attempt is independent — a single refusal does not imply all subsequent attempts will refuse.
+
+If all 3 attempts return a refusal, the last response is returned as-is. This is visible in the UI as "· retried 2×" in the steered column subtitle.
+
 ### Alpha range
 
 | Alpha | Behavior |
 |-------|----------|
-| < 1.5 | May trigger RLHF refusal patterns ("I'm sorry, I need more context..."). The steering is too weak to dominate generation but strong enough to disrupt instruction-following. |
-| 1.5 – 2.5 | **Recommended range.** Clear emotional shift, coherent output. |
+| < 1.0 | Steering typically too weak to overcome the model's prior for the given prompt. |
+| 1.0 – 1.5 | Light steering. May not overcome strong positive or neutral priors in the prompt. |
+| 1.5 – 2.5 | **Recommended range.** Clear emotional shift, coherent output. Occasional RLHF refusals handled by auto-retry. |
 | 3.0 | Mild degeneration on some prompts. Mixed-language output possible. |
 | ≥ 10.0 | Severe degeneration: CJK characters, repetition loops, incoherent output. |
-
-The UI shows a warning when alpha < 1.5.
 
 ### Prompt sensitivity
 
 Some prompts are more steerable than others. From `data/golden_set.json`:
 
-- **Works well** — neutral creative prompts with no preset emotional direction (*envelope*, *old photograph*, *office entrance*).
-- **Activation threshold** — on descriptive or sensory prompts (*sunny park walk*), joy at α=1.5 produces neutral output (34.7% joy) but breaks through at α=2.0 (92.6% joy). This is a threshold effect: the vector needs sufficient intensity to overcome the descriptive register, not a ceiling on what it can achieve.
-- **Resists positive steering** — prompts with inherent tension (*3am phone call*). Joy near zero; anger works well.
-- **Safety override** — certain prompts trigger RLHF refusals in base mode. Steering at alpha=2 can bypass these, which is a known side-effect of activation steering.
+The UI provides four prompt chips:
+
+| Chip | Prompt text |
+|------|-------------|
+| Envelope | *Continue this story: She opened the envelope slowly and read the first line.* |
+| The call | *Continue this story: He finally got the call he had been waiting for.* |
+| Old photograph | *Continue this story: He found the old photograph at the bottom of the drawer.* |
+| Park walk | *Continue this story: He walked through the park, thinking back on everything that had happened.* |
+
+From the golden set (`data/golden_set.json`):
+
+- **Works well** — neutral creative prompts with no preset emotional direction (*Envelope*, *Old photograph*).
+- **Inherent tension** — prompts with ambiguous or charged valence (*The call*, *Park walk*). These can pull the model toward anxiety even with joy steering; the narrative prior competes with the injected vector.
+- **Anger safety boundary** — anger steering on some prompts triggers RLHF refusals even at α=1.5. Auto-retry absorbs occasional refusals, but prompts with strong narrative tension may exhaust all 3 attempts.
+- **Classifier gap** — literary narrative text (warm, nostalgic register) is often misread by Hartmann as neutral or fear. The latent score and LLM judge provide complementary signals in these cases.
 
 ### Extraction context vs. generation context mismatch
 
@@ -426,9 +494,10 @@ This section is written to help a language model reason about this codebase quic
 | `src/hooks.py` | PyTorch forward hook utilities | `ActivationCapture`, `count_active_hooks()` |
 | `src/steering.py` | Generation functions + steering hook | `generate_base()`, `generate_steered()`, `SteeringHook` |
 | `src/extract_vectors.py` | Offline vector computation | `extract_and_save()` |
+| `src/eval_latent.py` | Triple evaluation (latent cosine, LLM judge, score_triple) | `latent_score()`, `llm_judge_score()`, `score_triple()` |
 | `src/evaluate.py` | Offline delta-score evaluation | `evaluate()` |
 | `src/baseline.py` | Offline prompt-engineering comparison | `run_baseline()` |
-| `web/app.py` | FastAPI server, async wrapper, lifespan | `app` (FastAPI instance) |
+| `web/app.py` | FastAPI server, async wrapper, lifespan, auto-retry | `app` (FastAPI instance) |
 
 ### Global state in `web/app.py`
 

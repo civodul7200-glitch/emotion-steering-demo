@@ -28,6 +28,8 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from transformers import pipeline
 
+from src.eval_latent import latent_score as _latent_score
+from src.eval_latent import llm_judge_score as _llm_judge_score
 from src.model_loader import ModelWrapper
 from src.steering import generate_base as _generate_base
 from src.steering import generate_steered as _generate_steered
@@ -36,8 +38,30 @@ from src.steering import generate_steered as _generate_steered
 # Configuration
 # ----------------------------------------------------------------------
 
-VECTORS_DIR = Path("vectors")
-LAYER_IDX   = 20
+VECTORS_DIR  = Path("vectors")
+LAYER_IDX    = 20
+MAX_RETRIES  = 3   # tentatives max avant de rendre un refus tel quel
+
+# Préfixes caractéristiques d'un refus RLHF
+_REFUSAL_PREFIXES = (
+    "i apologize",
+    "i'm not able",
+    "i am not able",
+    "i cannot",
+    "i can't",
+    "as an ai",
+    "i'm an ai",
+    "i am an ai",
+    "i'm unable",
+    "i am unable",
+    "i'm sorry, but",
+    "i'm sorry, i",
+)
+
+
+def _is_refusal(text: str) -> bool:
+    t = text.lower().strip()
+    return any(t.startswith(p) for p in _REFUSAL_PREFIXES)
 
 EMOTIONS: dict[str, dict] = {
     "joy": {
@@ -148,9 +172,20 @@ class SteerRequest(BaseModel):
     max_new_tokens: int = Field(default=120, ge=20, le=400)
 
 
+class AnalyzeRequest(BaseModel):
+    text:    str
+    emotion: str
+
+
+class AnalyzeResponse(BaseModel):
+    llm_judge: float | None
+
+
 class GenerateResponse(BaseModel):
-    text:   str
-    scores: dict[str, float]
+    text:     str
+    scores:   dict[str, float]
+    latent:   float | None = None   # cosine alignment avec le vecteur émotion à la couche 20
+    attempts: int = 1               # nombre de tentatives avant un output non-refus
 
 
 # ----------------------------------------------------------------------
@@ -195,9 +230,33 @@ async def generate_steered(req: SteerRequest):
                    f"Disponibles : {list(_vectors.keys())}",
         )
     vector = _vectors[req.emotion]
-    text   = await _run(
-        _generate_steered,
-        _wrapper, req.prompt, vector, req.alpha, LAYER_IDX, req.max_new_tokens,
-    )
-    scores = await asyncio.to_thread(_score, text)  # CPU-bound — hors sémaphore MPS intentionnellement
-    return GenerateResponse(text=text, scores=scores)
+
+    # Auto-retry : si le modèle génère un refus RLHF, on réessaie silencieusement.
+    # temperature=0.7 rend chaque run stochastique — un refus n'implique pas
+    # que les suivants le seront aussi.
+    text     = ""
+    attempts = 0
+    for attempt in range(1, MAX_RETRIES + 1):
+        attempts = attempt
+        text = await _run(
+            _generate_steered,
+            _wrapper, req.prompt, vector, req.alpha, LAYER_IDX, req.max_new_tokens,
+        )
+        if not _is_refusal(text):
+            break
+
+    latent = await _run(_latent_score, _wrapper, text, vector, LAYER_IDX)
+    scores = await asyncio.to_thread(_score, text)
+    return GenerateResponse(text=text, scores=scores, latent=latent, attempts=attempts)
+
+
+@app.post("/analyze", response_model=AnalyzeResponse)
+async def analyze(req: AnalyzeRequest):
+    """LLM judge : le modèle évalue son propre output, temperature=0.1."""
+    if req.emotion not in _vectors:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Émotion inconnue : {req.emotion!r}.",
+        )
+    judge = await _run(_llm_judge_score, _wrapper, req.text, req.emotion)
+    return AnalyzeResponse(llm_judge=judge)

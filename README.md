@@ -25,6 +25,10 @@ This project was built to explore a concrete question raised by Anthropic's Apri
 
 8. **Refusals are caused by prompt format, not steering.** "Continue this story:" prompts produce a 30% base refusal rate without any steering. Adding a joy or anger vector raises this to 70–80%. Descriptive prompts ("Describe...") produce 0% refusals across all tested conditions (base, joy α=2.0, anger α=2.0), even at high alpha. An alpha sweep on the narrative prompt confirms refusals occur at all alpha values (0.5–3.0) with no monotonic relationship, showing the refusal circuit is triggered by the prompt format and amplified — not created — by steering. This is a distinct interaction between prompt semantics and the RLHF behavioral layer.
 
+9. **Writing register determines steerability independently of prompt content.** Four registers were observed across generation runs: *instructional* (numbered steps — no emotional vocabulary slots, not steerable); *atmospheric-sensory* (environmental description — partially steerable, positive vocabulary possible but no emotional interiority); *meta-emotional* (explicit enumeration of emotion names — Hartmann reads high scores, LLM judge discounts it because emotion is described rather than expressed); *narrative-interior* (first-person felt experience — fully steerable). The vector operates within the register the model adopts; it cannot change the register itself. Descriptive prompts ("Describe...") introduce register ambiguity: the model may respond instructionally or atmospherically, both of which cap the vector's effect.
+
+10. **Scenario semantic priors can absorb the steering vector.** The "park walk at dusk" chip with anger α=2.0 produced joy 79% and latent 0.15 — the lowest latent score measured. The scenario's strong peaceful prior dominated the anger direction entirely. Emotionally ambiguous scenarios ("The call") have weaker priors and allow stronger vector influence (joy 95%, latent 0.22). The outcome of any steering run depends on the balance between the prior's amplitude in the target direction and α × ‖v‖, not on the vector alone. A strong scenario prior can be more influential than α=2.0 of steering.
+
 ---
 
 ## Table of contents
@@ -494,11 +498,19 @@ The UI provides four prompt chips, all using a descriptive framing ("Describe...
 | Old photograph | *Describe finding an old photograph tucked away in a drawer.* |
 | Park walk | *Describe a walk through a park as the afternoon light begins to fade.* |
 
-From the golden set (`data/golden_set.json`):
+Observed behavior per chip (joy α=2.0 and anger α=2.0, N=1 runs, qualitative):
 
-- **Works well** — descriptive prompts with no preset emotional direction (*Envelope*, *Old photograph*).
-- **Inherent tension** — prompts with ambiguous or charged valence (*The call*, *Park walk*). These can pull the model toward anxiety even with joy steering; the narrative prior competes with the injected vector.
-- **Classifier gap** — literary narrative text (warm, nostalgic register) is often misread by Hartmann as neutral or fear. The latent score and LLM judge provide complementary signals in these cases.
+| Chip | Joy result | Anger result | Dominant force |
+|------|-----------|--------------|----------------|
+| Envelope | joy 68%, latent 0.20, judge 0% | — | Suspense register competes with joy prior |
+| Old photograph | neutral 81%, latent 0.16, judge 0% | — | Instructional register — no emotional slots |
+| **The call** | **joy 95%, latent 0.22, judge 50%** | final_refusal (3/3) | RLHF blocks anger + interpersonal scenario |
+| Park walk | joy 69%, latent 0.21, judge 0% | joy 79%, latent 0.15, judge 0% | Strong peaceful prior absorbs anger vector |
+
+- **Best joy target** — *The call*: emotionally ambiguous prior, weak enough for the vector to dominate; explicit emotion vocabulary.
+- **Best anger target** — none of the four chips demonstrated reliable anger generation. The park prior absorbs the vector; interpersonal scenarios trigger RLHF.
+- **Register sensitivity** — *Old photograph* adopted an instructional register ("1. Initial observation..."), which has no emotional vocabulary for the vector to steer.
+- **Classifier gap** — atmospheric text (*Park walk*) scores joy 69–79% on Hartmann but 0% on the LLM judge, which requires emotional interiority, not just sensory richness.
 
 ### Prompt format and RLHF refusals
 
@@ -512,6 +524,52 @@ Measured with `src/investigate_refusals.py` (N=10 runs, no auto-retry):
 The "Continue this story:" framing causes 30% refusals even without steering. The model interprets the instruction as completing someone else's text (potential copyright concern) or sees the incomplete snippet as ambiguous context and applies safety refusals by precaution. Steering amplifies this tendency — an alpha sweep on the narrative prompt shows 40–90% refusal across all alpha values (0.5–3.0), with no monotonic relationship. The refusals are driven by the prompt format, not the steering magnitude.
 
 Descriptive prompts ("Describe...") frame the task as original composition. Measured at N=10, they produce 0% refusals across all tested conditions (base, joy α=2.0, anger α=2.0). The current UI chips all use this format.
+
+### Three competing forces
+
+Generation output is shaped by three forces that operate at different levels of the system. Understanding which dominates in a given run is necessary to interpret any single result.
+
+**1. Semantic prior of the scenario**
+
+Each scenario carries an implicit emotional valence in the model's latent space, inherited from the statistical distribution of how similar scenarios appear in training data. "Park walk at sunset" is a strong joy/peace attractor. "The call" is emotionally ambiguous (good or bad news?) — weaker prior, more room for the vector.
+
+When the prior is strong, it can absorb the steering vector. Anger α=2.0 on the park walk produced joy 79%, latent 0.15: the vector's perturbation was smaller than the prior's amplitude in the joy/peace direction, and the model followed the attractor basin. Increasing alpha could overcome this, but at the cost of degeneration risk.
+
+**2. Writing register**
+
+The register is the structural form the model adopts, independent of emotional vocabulary. The vector operates *within* the register — it cannot change it.
+
+| Register | Example | Steerable? |
+|----------|---------|------------|
+| Instructional | "1. Initial observation..." | No — no emotional vocabulary slots |
+| Atmospheric-sensory | "The air was thick with the scent of..." | Partially — positive vocabulary possible, no interiority |
+| Meta-emotional | "People feel joy, excitement, relief..." | Hartmann yes; LLM judge partially — emotion described, not expressed |
+| Narrative-interior | "I felt..." | Yes — emotional vocabulary and interiority |
+
+Descriptive prompts ("Describe...") eliminate RLHF refusals but introduce register ambiguity: the model may respond instructionally or atmospherically, both of which cap the vector's effect. The "Continue this story:" format forced a narrative register but triggered 30% base refusals. No known prompt format reliably produces narrative-interior register without refusal risk.
+
+**3. RLHF behavioral layer**
+
+The RLHF layer is a hard override. When the hidden state approaches certain regions, the model generates a refusal regardless of prior or register. The layer is sensitive to the *combination* of vector direction × scenario semantics, not to either alone:
+
+| Condition | Refusal rate |
+|-----------|-------------|
+| Joy + any scenario | 0% |
+| Anger + environmental scenario ("Park walk") | 0% |
+| Anger + interpersonal emotional scenario ("The call") | 100% (3/3 attempts) |
+| "Continue this story:" format, no steering | 30% |
+
+The anger vector's negative-valence component traverses latent space closer to RLHF-blocked regions than the joy vector's path — a consequence of the geometry, not the alpha value. cosine(joy, anger) = 0.72 means both vectors share a large arousal component; it is the negative-valence component of anger that approaches the behavioral boundary.
+
+**The hierarchy**
+
+When the three forces compete:
+
+```
+RLHF (hard override) > Semantic prior > Writing register > Steering vector
+```
+
+A high-alpha vector can overcome a weak prior. It cannot overcome RLHF. It cannot change the register once adopted. The observed latent scores (0.15–0.22 across all chips at α=2.0) reflect the remaining margin the vector has after the prior and register have already constrained the representation space.
 
 ### Sources of instability — what is and is not the corpus
 

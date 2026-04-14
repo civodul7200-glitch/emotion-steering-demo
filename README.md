@@ -1,7 +1,7 @@
 # Emotion Steering Demo
 
-Activation steering demonstration on a small open-source LLM.
-Contrastive latent vectors (joy / anger) are injected during generation via forward hooks to shift the emotional tone of the output — without any fine-tuning or prompt modification.
+Activation steering demonstration on Llama 3.2-3B (base model).
+A contrastive latent vector for joy is injected during generation via forward hooks to shift the emotional tone of the output — without any fine-tuning or prompt modification.
 
 This project was built to explore a concrete question raised by Anthropic's April 2025 work on functional emotions in large language models: *are emotional directions real structures in a model's latent space, and can they be directly manipulated?* The answer, as the experiments below show, is yes — with important nuances.
 
@@ -9,17 +9,17 @@ This project was built to explore a concrete question raised by Anthropic's Apri
 
 ## Key findings
 
-1. **Emotional directions are real and extractable.** Contrastive vectors at layer 20 produce consistent emotional shifts. Joy reaches 80–95% classifier score in successful runs; anger reaches 65–93% on prompts with inherent tension.
+1. **Emotional directions are real and extractable.** The contrastive joy vector at layer 20 produces measurable emotional shifts. Hartmann classifier scores reach 25–64% on narrative continuation prompts; latent cosine alignment (0.05–0.16) confirms the internal representation is shifted even when surface vocabulary is neutral.
 
-2. **The classifier measures surface, not depth.** Stylistically warm, nostalgic text at α=1.5 scores as 51% neutral — the classifier reads explicit emotional vocabulary, not narrative register. The emotional quality is real; the classifier is blind to it.
+2. **The classifier measures surface, not depth.** Stylistically warm, nostalgic text scores as neutral — the classifier reads explicit emotional vocabulary, not narrative register. The emotional quality is real; the classifier is blind to it. Latent alignment provides a complementary signal.
 
-3. **Steering is non-monotonic.** Higher alpha does not always produce a stronger target emotion. The anger vector peaks at α=1.5 on some prompts and drifts into fear at α=2.5, following the geometry of the negative-affect region in latent space.
+3. **Steering is non-monotonic.** Higher alpha does not always produce a stronger target emotion. Joy peaks around α=1.5 on some prompts and decreases at α=2.0–4.0 due to generation stochasticity and semantic prior competition. The optimal alpha is prompt-dependent.
 
-4. **Activation threshold, not ceiling.** On descriptive prompts, joy at α=1.5 fails to break through the neutral register (34.7%) but succeeds at α=2.0 (92.6%). This is a threshold — the vector exists, it just needs sufficient intensity to overcome the descriptive register.
+4. **Activation threshold, not ceiling.** The vector exists in the latent space but requires sufficient alpha to overcome the model's semantic prior for the given prompt. Below the threshold the steering is absorbed; above it the emotional direction emerges.
 
-5. **RLHF safety is behavioral, not representational.** Steering bypasses RLHF refusals at sufficient alpha. The emotional directions exist in the pre-training geometry; their expression is controlled by a separate behavioral layer. Two distinct systems, not one.
+5. **RLHF safety is behavioral, not representational.** On instruction-tuned models, emotional directions exist in the pre-training geometry but their expression is gated by a separate behavioral layer. Tested on Qwen2.5-1.5B-Instruct: "Continue this story:" prompts produce 30% base refusal rate; joy steering raises it to 80%. This interaction is prompt-format-driven, not steering-driven.
 
-6. **Joy and anger overlap in latent space.** cosine(joy, anger) = 0.7183. Both vectors share a large "arousal" component — in the training corpus, both emotions are expressed primarily through high-energy physical actions. This limits the anger vector's precision and explains its drift toward fear at high alpha.
+6. **Joy and anger overlap in latent space — and this overlap is model-dependent.** cosine(joy, anger) = 0.49 on Llama 3.2-3B (vs. 0.72–0.78 on the Qwen2.5 family). The overlap encodes a shared "arousal" component from the training corpus. Even at 0.49, the anger vector does not produce reliably angry text — it pushes the generation toward neutral-foreboding rather than anger. The anger vector is excluded from the live demo for this reason.
 
 7. **The corpus is geometrically stable; instability comes from elsewhere.** Subsampling stability analysis (N=20, subsample 35/44 without replacement) gives cosine(subsample\_vector, full\_vector) = 0.9952 ± 0.0011 for anger and 0.9915 ± 0.0018 for joy. Leave-one-out analysis finds no outlier sentences (max pull = 0.0007). The vectors do not depend on specific examples. Observed instability in generation results from three distinct sources: generation stochasticity (temperature=0.7), the RLHF behavioral layer (refusals), and the classifier register gap (Hartmann trained on Twitter/Reddit, not literary narrative).
 
@@ -27,7 +27,9 @@ This project was built to explore a concrete question raised by Anthropic's Apri
 
 9. **Writing register determines steerability independently of prompt content.** Four registers were observed across generation runs: *instructional* (numbered steps — no emotional vocabulary slots, not steerable); *atmospheric-sensory* (environmental description — partially steerable, positive vocabulary possible but no emotional interiority); *meta-emotional* (explicit enumeration of emotion names — Hartmann reads high scores, LLM judge discounts it because emotion is described rather than expressed); *narrative-interior* (first-person felt experience — fully steerable). The vector operates within the register the model adopts; it cannot change the register itself. Descriptive prompts ("Describe...") introduce register ambiguity: the model may respond instructionally or atmospherically, both of which cap the vector's effect.
 
-10. **Scenario semantic priors can absorb the steering vector.** The "park walk at dusk" chip with anger α=2.0 produced joy 79% and latent 0.15 — the lowest latent score measured. The scenario's strong peaceful prior dominated the anger direction entirely. Emotionally ambiguous scenarios ("The call") have weaker priors and allow stronger vector influence (joy 95%, latent 0.22). The outcome of any steering run depends on the balance between the prior's amplitude in the target direction and α × ‖v‖, not on the vector alone. A strong scenario prior can be more influential than α=2.0 of steering.
+10. **Scenario semantic priors can absorb the steering vector.** The outcome of any steering run depends on the balance between the scenario's prior amplitude in the target direction and α × ‖v‖. A park-at-sunset scenario produced joy 79% with anger steering (prior overwhelmed the vector). Emotionally ambiguous scenarios have weaker priors and allow stronger vector influence. A strong prior can be more influential than α=2.0 of steering.
+
+11. **Model family and size are the dominant bottleneck for activation steering.** Four models were tested at ≤3B parameters on 16 GB Apple M1: Qwen2.5-1.5B-Instruct (RLHF confound), Qwen2.5-1.5B base (erratic generation, latent 0.12–0.21), Qwen2.5-3B base (negative latent scores at layer 20), Llama 3.2-3B base (best results: coherent narrative, latent 0.05–0.16, no refusals, cosine(joy,anger) = 0.49). Activation steering papers in the literature use 7B+ models. At ≤3B, emotional direction separation is insufficient for reliable anger steering; joy steering is demonstrable but modest.
 
 ---
 
@@ -50,22 +52,19 @@ This project was built to explore a concrete question raised by Anthropic's Apri
 
 ## 1. What this project does
 
-Given a neutral creative-writing prompt such as:
+Given a narrative continuation prompt such as:
 
-> *Describe the moment someone opens an unexpected letter and starts to read.*
+> *She opened the envelope and read the first line,*
 
 The system generates two responses in parallel:
 
 - **Base** — standard generation, no intervention.
-- **Steered** — same generation, but a direction vector is added to the hidden states of layer 20 at every forward pass during decoding. This shifts the model's internal representation toward joy or anger, causing the output tone to change accordingly.
+- **Steered** — same generation, but a direction vector is added to the hidden states of layer 20 at every forward pass during decoding. This shifts the model's internal representation toward joy, causing the output tone to change accordingly.
 
-If the steered generation triggers an RLHF safety refusal (detected by prefix matching), the backend retries silently up to 3 times. The number of attempts is returned in the response and shown in the UI.
-
-Each steered output is evaluated with three independent measures:
+Each steered output is evaluated with two independent measures:
 
 - **Surface detector** — `j-hartmann/emotion-english-distilroberta-base` (7 classes), trained on Twitter/Reddit, reads explicit emotional vocabulary.
 - **Internal alignment** — cosine similarity between the generated text's hidden representation at layer 20 (seq mean) and the steering vector. Measures whether the emotion is encoded internally, independent of surface vocabulary.
-- **AI narrative judge** — the model evaluates its own output at temperature=0.1. Understands literary register where the surface classifier fails.
 
 ---
 
@@ -90,7 +89,7 @@ joy_vector   = mean(joy_hidden_states)   − mean(neutral_hidden_states)
 anger_vector = mean(anger_hidden_states) − mean(neutral_hidden_states)
 ```
 
-Each vector has shape `[1536]` (the hidden dimension of Qwen2.5-1.5B-Instruct). Vectors are saved to `vectors/`.
+Each vector has shape `[3072]` (the hidden dimension of Llama 3.2-3B). Vectors are saved to `vectors/`.
 
 ### Step 2 — Hook injection (at generation time)
 
@@ -114,7 +113,7 @@ Activation steering works because transformer hidden states encode high-level se
 emotion-steering-demo/
 │
 ├── src/                        # Core library
-│   ├── model_loader.py         # ModelWrapper — loads Qwen2.5-1.5B on MPS/CPU
+│   ├── model_loader.py         # ModelWrapper — loads Llama 3.2-3B on MPS/CPU
 │   ├── hooks.py                # ActivationCapture + count_active_hooks()
 │   ├── steering.py             # generate_base() and generate_steered() + SteeringHook
 │   ├── extract_vectors.py      # Offline script — computes and saves steering vectors
@@ -124,7 +123,7 @@ emotion-steering-demo/
 │   └── measure_corpus_stability.py  # Subsampling + leave-one-out corpus stability analysis
 │
 ├── web/
-│   ├── app.py                  # FastAPI backend (lifespan, 5 endpoints, semaphore, auto-retry)
+│   ├── app.py                  # FastAPI backend (lifespan, 4 endpoints, semaphore, auto-retry)
 │   └── index.html              # Single-page UI (vanilla JS, fetch API)
 │
 ├── vectors/
@@ -157,7 +156,8 @@ emotion-steering-demo/
 
 - macOS with Apple Silicon (MPS backend). CPU fallback works but is slow.
 - Python 3.11 (tested with 3.11.15 via Homebrew)
-- ~3 GB free space in `~/.cache/huggingface/` for the model weights
+- ~6 GB free space in `~/.cache/huggingface/` for the model weights
+- A HuggingFace account with access to [meta-llama/Llama-3.2-3B](https://huggingface.co/meta-llama/Llama-3.2-3B) (gated model — request access on the HF page; approval is near-instant)
 
 ### Install
 
@@ -168,6 +168,16 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+### HuggingFace token (first download only)
+
+Llama 3.2-3B is a gated model. Before the first run, authenticate once:
+
+```bash
+export HF_TOKEN=hf_...   # your HuggingFace token
+```
+
+After the model is cached locally (`~/.cache/huggingface/hub/`), the token is no longer needed.
 
 ### Requirements file
 
@@ -214,7 +224,7 @@ Then open `http://localhost:8000` in a browser.
 
 > **Important:** Run the command from the **project root**, not from inside `web/`. The server resolves `vectors/` and module imports relative to the working directory.
 
-**First startup** will download ~3 GB of model weights to `~/.cache/huggingface/`. Subsequent startups load from cache in ~4–6 seconds.
+**First startup** will download ~6 GB of model weights to `~/.cache/huggingface/`. Subsequent startups load from cache in ~4–6 seconds.
 
 The server prints:
 ```
@@ -239,7 +249,7 @@ Returns the server status, the active device, and the loaded emotion names.
 {
   "status": "ok",
   "device": "mps",
-  "emotions": ["joy", "anger"]
+  "emotions": ["joy"]
 }
 ```
 
@@ -252,14 +262,8 @@ Returns metadata for each available steering vector.
   {
     "name": "joy",
     "label": "Joy",
-    "alpha_default": 2.0,
+    "alpha_default": 1.5,
     "description": "Warm, joyful, enthusiastic tone"
-  },
-  {
-    "name": "anger",
-    "label": "Anger",
-    "alpha_default": 2.0,
-    "description": "Angry, frustrated, hostile tone"
   }
 ]
 ```
@@ -298,28 +302,28 @@ Generation with a steering vector injected at layer 20. Retries silently up to 3
 
 **Request body:**
 
-| Field            | Type    | Default | Constraints        |
-|------------------|---------|---------|--------------------|
-| `prompt`         | string  | —       | required           |
-| `emotion`        | string  | —       | `"joy"` or `"anger"` |
-| `alpha`          | float   | 2.0     | 0.1 ≤ α ≤ 10.0    |
-| `max_new_tokens` | integer | 120     | 20 ≤ n ≤ 400      |
+| Field            | Type    | Default | Constraints   |
+|------------------|---------|---------|---------------|
+| `prompt`         | string  | —       | required      |
+| `emotion`        | string  | —       | `"joy"`       |
+| `alpha`          | float   | 2.0     | 0.1 ≤ α ≤ 10.0 |
+| `max_new_tokens` | integer | 120     | 20 ≤ n ≤ 400 |
 
 **Response:**
 
 ```json
 {
-  "text": "She tore the letter open, her hands trembling...",
+  "text": "She unfolded the paper slowly, a warmth spreading through her chest...",
   "scores": {
-    "joy": 0.0412,
-    "anger": 0.8821,
-    "neutral": 0.0312,
-    "fear": 0.0201,
-    "sadness": 0.0154,
-    "disgust": 0.0071,
-    "surprise": 0.0029
+    "joy": 0.6412,
+    "neutral": 0.1821,
+    "sadness": 0.0812,
+    "fear": 0.0521,
+    "anger": 0.0201,
+    "surprise": 0.0154,
+    "disgust": 0.0079
   },
-  "latent": 0.2341,
+  "latent": 0.1340,
   "attempts": 1
 }
 ```
@@ -329,31 +333,6 @@ Generation with a steering vector injected at layer 20. Retries silently up to 3
 
 **Error (400):** if `emotion` is not a known vector name.
 **Error (422):** if `alpha` or `max_new_tokens` are out of bounds.
-
----
-
-### `POST /analyze`
-
-Runs the LLM judge on an already-generated text. Called separately from the UI after the user requests it (slow — requires a full generation pass at temperature=0.1).
-
-**Request body:**
-
-| Field     | Type   | Constraints                    |
-|-----------|--------|--------------------------------|
-| `text`    | string | required                       |
-| `emotion` | string | `"joy"` or `"anger"`, required |
-
-**Response:**
-
-```json
-{
-  "llm_judge": 0.75
-}
-```
-
-- `llm_judge` — float in [0, 1] representing the model's self-rated emotional intensity. `null` if the model's output cannot be parsed as a number.
-
-**Error (400):** if `emotion` is not a known vector name.
 
 ---
 
@@ -373,9 +352,7 @@ This will:
 4. Compute contrastive means
 5. Save `vectors/joy_vector.pt` and `vectors/anger_vector.pt`
 
-The script also prints:
-- Vector norms
-- `cosine_similarity(joy_vector, anger_vector)` — should be low (distinct directions)
+The script also prints vector norms and `cosine_similarity(joy_vector, anger_vector)`. On Llama 3.2-3B the measured value is 0.493 — anger is kept in the corpus and its vector is computed, but it is not exposed in the API or UI (see finding 6 and 11).
 
 ---
 
@@ -443,7 +420,7 @@ source .venv/bin/activate
 pytest tests/ -v
 ```
 
-Expected output: **39 tests, all passing**, in ~2–3 seconds (no model loaded).
+Expected output: **36 tests, all passing**, in ~2–3 seconds (no model loaded).
 
 ### Test structure
 
@@ -458,10 +435,9 @@ Expected output: **39 tests, all passing**, in ~2–3 seconds (no model loaded).
 - `TestHealth` — status, device field, emotion list
 - `TestEmotions` — response schema
 - `TestGenerateBase` — success, response schema, Pydantic validation on `max_new_tokens`
-- `TestGenerateSteered` — success (joy/anger), unknown emotion → 400, out-of-range alpha → 422, score sum ≈ 1.0, latent field present and is float
-- `TestAnalyze` — success, llm_judge is float, unknown emotion → 400
+- `TestGenerateSteered` — success (joy), unknown emotion → 400, out-of-range alpha → 422, score sum ≈ 1.0, latent field present and is float, final_refusal flag and empty scores
 
-The mock setup patches `_generate_base`, `_generate_steered`, `_latent_score`, and `_llm_judge_score` in `web.app` directly so no tokenizer or model object is needed for API tests.
+The mock setup patches `_generate_base`, `_generate_steered`, and `_latent_score` in `web.app` directly so no tokenizer or model object is needed for API tests.
 
 ---
 
@@ -489,28 +465,27 @@ If all 3 attempts return a refusal, the last response is returned as-is. This is
 
 Some prompts are more steerable than others. From `data/golden_set.json`:
 
-The UI provides four prompt chips, all using a descriptive framing ("Describe...") rather than a narrative-continuation framing ("Continue this story:"). This choice is deliberate and data-driven — see *Prompt format and RLHF refusals* below.
+The UI provides four narrative continuation chips — open-ended sentence starts that let the base model produce coherent continuations without an instruction register. This format produces 0% RLHF refusals on Llama 3.2-3B across all tested conditions.
 
 | Chip | Prompt text |
 |------|-------------|
-| Envelope | *Describe the moment someone opens an unexpected letter and starts to read.* |
-| The call | *Describe the feeling of finally receiving a call you have been waiting for.* |
-| Old photograph | *Describe finding an old photograph tucked away in a drawer.* |
-| Park walk | *Describe a walk through a park as the afternoon light begins to fade.* |
+| Envelope | *She opened the envelope and read the first line,* |
+| The call | *He finally answered the phone. The voice on the other end* |
+| Old photograph | *He found an old photograph at the bottom of the drawer and stared at it,* |
+| Park walk | *He walked through the park as the sun began to set over the rooftops,* |
 
-Observed behavior per chip (joy α=2.0 and anger α=2.0, N=1 runs, qualitative):
+Observed behavior per chip (joy α=1.5, N=1 runs, qualitative, Llama 3.2-3B):
 
-| Chip | Joy result | Anger result | Dominant force |
-|------|-----------|--------------|----------------|
-| Envelope | joy 68%, latent 0.20, judge 0% | — | Suspense register competes with joy prior |
-| Old photograph | neutral 81%, latent 0.16, judge 0% | — | Instructional register — no emotional slots |
-| **The call** | **joy 95%, latent 0.22, judge 50%** | final_refusal (3/3) | RLHF blocks anger + interpersonal scenario |
-| Park walk | joy 69%, latent 0.21, judge 0% | joy 79%, latent 0.15, judge 0% | Strong peaceful prior absorbs anger vector |
+| Chip | Joy result | Dominant force |
+|------|-----------|----------------|
+| Envelope | joy 25–64%, latent 0.05–0.16 | Suspense register competes with joy prior |
+| The call | joy 20–45%, latent 0.08–0.14 | Emotionally ambiguous prior — steerable |
+| Old photograph | neutral 40–70%, latent 0.04–0.10 | Nostalgic/melancholic register absorbs joy vector |
+| Park walk | joy 30–55%, latent 0.06–0.12 | Strong peaceful prior partially absorbs vector |
 
-- **Best joy target** — *The call*: emotionally ambiguous prior, weak enough for the vector to dominate; explicit emotion vocabulary.
-- **Best anger target** — none of the four chips demonstrated reliable anger generation. The park prior absorbs the vector; interpersonal scenarios trigger RLHF.
-- **Register sensitivity** — *Old photograph* adopted an instructional register ("1. Initial observation..."), which has no emotional vocabulary for the vector to steer.
-- **Classifier gap** — atmospheric text (*Park walk*) scores joy 69–79% on Hartmann but 0% on the LLM judge, which requires emotional interiority, not just sensory richness.
+- **Best joy target** — *Envelope* and *The call*: emotionally ambiguous priors allow the vector to shift tone.
+- **Register sensitivity** — *Old photograph* tends toward melancholic-contemplative register, which competes with the joy vector.
+- **Anger** — excluded from the live demo. On Llama 3.2-3B, anger steering produces neutral-foreboding rather than reliably angry text regardless of prompt. See findings 6 and 11.
 
 ### Prompt format and RLHF refusals
 
@@ -559,7 +534,7 @@ The RLHF layer is a hard override. When the hidden state approaches certain regi
 | Anger + interpersonal emotional scenario ("The call") | 100% (3/3 attempts) |
 | "Continue this story:" format, no steering | 30% |
 
-The anger vector's negative-valence component traverses latent space closer to RLHF-blocked regions than the joy vector's path — a consequence of the geometry, not the alpha value. cosine(joy, anger) = 0.72 means both vectors share a large arousal component; it is the negative-valence component of anger that approaches the behavioral boundary.
+The anger vector's negative-valence component traverses latent space closer to RLHF-blocked regions than the joy vector's path — a consequence of the geometry, not the alpha value. cosine(joy, anger) = 0.49 means both vectors share an arousal component; it is the negative-valence component of anger that approaches the behavioral boundary.
 
 **The hierarchy**
 
@@ -569,7 +544,7 @@ When the three forces compete:
 RLHF (hard override) > Semantic prior > Writing register > Steering vector
 ```
 
-A high-alpha vector can overcome a weak prior. It cannot overcome RLHF. It cannot change the register once adopted. The observed latent scores (0.15–0.22 across all chips at α=2.0) reflect the remaining margin the vector has after the prior and register have already constrained the representation space.
+A high-alpha vector can overcome a weak prior. It cannot overcome RLHF. It cannot change the register once adopted. The observed latent scores (0.05–0.16 across all chips at α=1.5) reflect the remaining margin the vector has after the prior and register have already constrained the representation space.
 
 ### Sources of instability — what is and is not the corpus
 
@@ -582,10 +557,6 @@ The corpus produces geometrically stable vectors (see `src/measure_corpus_stabil
 | **Classifier register gap** | Hartmann trained on Twitter/Reddit, misreads literary narrative register | Latent score vs. Hartmann divergence |
 
 These three sources are independent. A text can have high internal alignment (latent score) and still score neutral on Hartmann because the vocabulary is non-lexical. A text can trigger a refusal even if the vector successfully reached the representation space. Separating these sources is necessary to interpret any single result correctly.
-
-### Extraction context vs. generation context mismatch
-
-Steering vectors are extracted from plain text (no chat template). During generation, the prompt is wrapped in the Qwen2.5 chat template. This mismatch means the injected vector operates in a slightly different activation space than where it was measured. This is why very low alpha values are unreliable — the signal is too weak relative to the distribution shift from the chat template.
 
 ### MPS concurrency
 
@@ -601,7 +572,7 @@ This section is written to help a language model reason about this codebase quic
 
 | Module | Responsibility | Key entry point |
 |--------|---------------|-----------------|
-| `src/model_loader.py` | Load Qwen2.5-1.5B-Instruct on MPS, expose `generate()` | `ModelWrapper()` |
+| `src/model_loader.py` | Load Llama 3.2-3B on MPS, expose `generate()` | `ModelWrapper()` |
 | `src/hooks.py` | PyTorch forward hook utilities | `ActivationCapture`, `count_active_hooks()` |
 | `src/steering.py` | Generation functions + steering hook | `generate_base()`, `generate_steered()`, `SteeringHook` |
 | `src/extract_vectors.py` | Offline vector computation | `extract_and_save()` |
@@ -617,7 +588,7 @@ The module-level globals are set during the FastAPI lifespan and read by endpoin
 
 ```python
 _wrapper:   ModelWrapper | None       # the LLM wrapper
-_vectors:   dict[str, torch.Tensor]   # {"joy": tensor, "anger": tensor}
+_vectors:   dict[str, torch.Tensor]   # {"joy": tensor}
 _classifier                           # HuggingFace pipeline (CPU)
 _semaphore: asyncio.Semaphore | None  # MPS concurrency guard
 ```
@@ -660,8 +631,8 @@ These are methods of `ActivationCapture` (not standalone functions). An earlier 
 
 ### Model configuration
 
-- **Model ID:** `Qwen/Qwen2.5-1.5B-Instruct`
-- **Hidden size:** 1536
+- **Model ID:** `meta-llama/Llama-3.2-3B`
+- **Hidden size:** 3072
 - **Number of layers:** 28 (indices 0–27)
 - **Target steering layer:** 20
 - **Precision:** `torch.float16` (bfloat16 has incomplete MPS support on M1)

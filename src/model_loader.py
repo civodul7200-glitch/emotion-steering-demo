@@ -28,7 +28,7 @@ class ModelWrapper:
     GPU/MPS pour toutes les générations successives.
     """
 
-    MODEL_ID = "Qwen/Qwen2.5-1.5B-Instruct"
+    MODEL_ID = "meta-llama/Llama-3.2-3B"
 
     def __init__(
         self,
@@ -41,7 +41,7 @@ class ModelWrapper:
         self.dtype = dtype
 
         print(f"[model_loader] Using device: {self.device}")
-        print("[model_loader] NOTE: premier lancement = ~3 GB de téléchargement.")
+        print("[model_loader] NOTE: premier lancement = ~6 GB de téléchargement.")
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_id, trust_remote_code=True
@@ -61,11 +61,7 @@ class ModelWrapper:
         max_new_tokens: int = 200,
         temperature: float = 0.7,
     ) -> str:
-        messages = [{"role": "user", "content": prompt}]
-        text = self.tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
-        inputs = self.tokenizer(text, return_tensors="pt").to(self.device)
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
 
         with torch.inference_mode():
             output_ids = self.model.generate(

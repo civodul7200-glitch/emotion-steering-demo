@@ -110,6 +110,10 @@ def llm_judge_score(
     temperature=0.1, max_new_tokens=10 → réponse quasi-déterministe.
 
     Retourne un float dans [0, 1], ou None si le parsing échoue.
+
+    Note : requiert un modèle instruct (apply_chat_template). Non appelé par
+    le pipeline API en mode base model — disponible uniquement pour les scripts
+    offline (eval_latent._demo, evaluate.py) avec un modèle instruct.
     """
     prompt = _JUDGE_PROMPT.format(emotion=emotion, text=text[:400])
     messages = [{"role": "user", "content": prompt}]

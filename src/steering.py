@@ -92,11 +92,7 @@ def generate_steered(
     max_new_tokens: int = 150,
 ) -> str:
     """Génère avec le vecteur injecté à chaque pas de décodage."""
-    messages = [{"role": "user", "content": prompt}]
-    text = wrapper.tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True
-    )
-    inputs = wrapper.tokenizer(text, return_tensors="pt").to(wrapper.device)
+    inputs = wrapper.tokenizer(prompt, return_tensors="pt").to(wrapper.device)
 
     with SteeringHook(wrapper.model, layer_idx, vector, alpha):
         with torch.inference_mode():

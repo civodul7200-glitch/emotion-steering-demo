@@ -29,7 +29,6 @@ from pydantic import BaseModel, Field
 from transformers import pipeline
 
 from src.eval_latent import latent_score as _latent_score
-from src.eval_latent import llm_judge_score as _llm_judge_score
 from src.model_loader import ModelWrapper
 from src.steering import generate_base as _generate_base
 from src.steering import generate_steered as _generate_steered
@@ -66,13 +65,8 @@ def _is_refusal(text: str) -> bool:
 EMOTIONS: dict[str, dict] = {
     "joy": {
         "label":         "Joy",
-        "alpha_default": 2.0,
+        "alpha_default": 1.5,
         "description":   "Warm, joyful, enthusiastic tone",
-    },
-    "anger": {
-        "label":         "Anger",
-        "alpha_default": 2.0,
-        "description":   "Angry, frustrated, hostile tone",
     },
 }
 
@@ -172,15 +166,6 @@ class SteerRequest(BaseModel):
     max_new_tokens: int = Field(default=120, ge=20, le=400)
 
 
-class AnalyzeRequest(BaseModel):
-    text:    str
-    emotion: str
-
-
-class AnalyzeResponse(BaseModel):
-    llm_judge: float | None
-
-
 class GenerateResponse(BaseModel):
     text:          str
     scores:        dict[str, float]
@@ -258,15 +243,3 @@ async def generate_steered(req: SteerRequest):
     latent = await _run(_latent_score, _wrapper, text, vector, LAYER_IDX)
     scores = await asyncio.to_thread(_score, text)
     return GenerateResponse(text=text, scores=scores, latent=latent, attempts=attempts)
-
-
-@app.post("/analyze", response_model=AnalyzeResponse)
-async def analyze(req: AnalyzeRequest):
-    """LLM judge : le modèle évalue son propre output, temperature=0.1."""
-    if req.emotion not in _vectors:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Émotion inconnue : {req.emotion!r}.",
-        )
-    judge = await _run(_llm_judge_score, _wrapper, req.text, req.emotion)
-    return AnalyzeResponse(llm_judge=judge)

@@ -358,38 +358,6 @@
       text-align: right;
     }
 
-    /* LLM judge button */
-    .judge-row {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      margin-bottom: .3rem;
-    }
-    button#analyze-btn {
-      padding: .3rem .9rem;
-      background: var(--surface);
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      border-radius: 6px;
-      font-size: .82rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all .15s;
-      white-space: nowrap;
-    }
-    button#analyze-btn:hover:not(:disabled) {
-      background: var(--accent-bg);
-    }
-    button#analyze-btn:disabled { opacity: .5; cursor: not-allowed; }
-
-    .judge-result {
-      flex: 1;
-      font-size: .82rem;
-    }
-    .judge-value {
-      font-weight: 700;
-      color: var(--accent);
-    }
     .judge-pending {
       color: var(--muted);
       font-style: italic;
@@ -456,14 +424,13 @@
         <li><strong>Alpha</strong> — how strongly to inject it (intensity of the intervention)</li>
         <li><strong>Prompt</strong> — the story seed the model continues</li>
       </ul>
-      <p><strong>How we measure the effect — three ways:</strong></p>
+      <p><strong>How we measure the effect — two ways:</strong></p>
       <ul>
         <li><strong>Surface score</strong> — a classifier reads the text and detects explicit emotion words</li>
         <li><strong>Internal alignment</strong> — we measure how much the model's hidden state at layer 20 aligned with the emotion vector, even if the text doesn't use obvious emotion words</li>
-        <li><strong>AI narrative judge</strong> — the model reads its own output and rates the emotional intensity as a reader would</li>
       </ul>
       <p>
-        The gap between these three scores is what's interesting: sometimes the emotion is
+        The gap between these two scores is what's interesting: sometimes the emotion is
         internally present but not yet expressed on the surface.
       </p>
     </div>
@@ -474,13 +441,13 @@
 <div class="card controls">
 
   <label class="field-label" for="prompt">Story prompt</label>
-  <textarea id="prompt" placeholder="Describe the moment someone opens an unexpected letter and starts to read.">Describe the moment someone opens an unexpected letter and starts to read.</textarea>
+  <textarea id="prompt" placeholder="She opened the envelope and read the first line,">She opened the envelope and read the first line,</textarea>
 
   <div class="prompt-chips" id="prompt-chips">
-    <span class="chip" data-prompt="Describe the moment someone opens an unexpected letter and starts to read.">Envelope</span>
-    <span class="chip" data-prompt="Describe the feeling of finally receiving a call you have been waiting for.">The call</span>
-    <span class="chip" data-prompt="Describe finding an old photograph tucked away in a drawer.">Old photograph</span>
-    <span class="chip" data-prompt="Describe a walk through a park as the afternoon light begins to fade.">Park walk</span>
+    <span class="chip" data-prompt="She opened the envelope and read the first line,">Envelope</span>
+    <span class="chip" data-prompt="He finally answered the phone. The voice on the other end">The call</span>
+    <span class="chip" data-prompt="He found an old photograph at the bottom of the drawer and stared at it,">Old photograph</span>
+    <span class="chip" data-prompt="He walked through the park as the sun began to set over the rooftops,">Park walk</span>
   </div>
 
   <div class="row">
@@ -543,11 +510,11 @@
       <div id="bars-steered"></div>
     </div>
 
-    <!-- Steering evaluation (latent + judge) -->
+    <!-- Steering evaluation (latent) -->
     <div class="eval-section" id="eval-section">
       <div class="section-title">
         Steering evaluation
-        <i class="info" title="Two deeper measures: internal alignment (hidden state) and AI narrative judgment.">?</i>
+        <i class="info" title="Internal alignment: cosine similarity between the generated text's hidden state at layer 20 and the emotion vector.">?</i>
       </div>
 
       <!-- Latent alignment -->
@@ -562,19 +529,6 @@
           </div>
         </div>
         <div class="eval-value" id="latent-value">—</div>
-      </div>
-
-      <!-- LLM judge -->
-      <div class="judge-row">
-        <div class="eval-label-wrap">
-          <div class="eval-label">AI narrative judge</div>
-          <div class="eval-sublabel">Model reads its output</div>
-        </div>
-        <button id="analyze-btn" onclick="analyze()">Analyze →</button>
-        <div class="judge-result">
-          <span class="judge-pending" id="judge-pending">Click to ask the model to rate its own output</span>
-          <span class="judge-value" id="judge-value" style="display:none"></span>
-        </div>
       </div>
 
       <!-- Gap note -->
@@ -597,11 +551,8 @@
     surprise: 'var(--c-surprise)',
   };
 
-  // State for analyze button
-  let _lastSteeredText = null;
-  let _lastEmotion     = null;
-  let _lastLatent      = null;
-  let _lastHartmann    = null;
+  let _lastLatent   = null;
+  let _lastHartmann = null;
 
   // ── Example prompt chips ──
   document.querySelectorAll('.chip').forEach(chip => {
@@ -655,17 +606,14 @@
   }
 
   // ── Gap interpretation ──
-  function showGapNote(latent, hartmann, judge) {
+  function showGapNote(latent, hartmann) {
     const note = document.getElementById('gap-note');
-    const gap = latent - hartmann;
 
     let msg = '';
     if (latent >= 0.5 && hartmann < 0.3) {
       msg = '→ High internal alignment, low surface score: the emotion is encoded in the model\'s hidden state but without explicit emotion words — a signature of subtle steering.';
-    } else if (judge !== null && judge >= 0.6 && hartmann < 0.3) {
-      msg = '→ The AI judge detects the emotion narratively, but the surface classifier misses it — the text is emotionally readable without using obvious emotion vocabulary.';
-    } else if (latent >= 0.5 && (judge === null || judge >= 0.5) && hartmann >= 0.5) {
-      msg = '→ All three measures agree: the steering was effective and fully expressed.';
+    } else if (latent >= 0.5 && hartmann >= 0.5) {
+      msg = '→ Both measures agree: the steering was effective and expressed on the surface.';
     } else if (latent < 0.2 && hartmann >= 0.5) {
       msg = '→ High surface score, low internal alignment: the emotional vocabulary may be prompt-driven rather than from the steering vector.';
     }
@@ -703,20 +651,6 @@
     el.classList.remove('placeholder');
   }
 
-  // Reset analyze state
-  function resetAnalyze() {
-    _lastSteeredText = null;
-    _lastEmotion = null;
-    _lastLatent = null;
-    _lastHartmann = null;
-    document.getElementById('judge-pending').textContent = 'Click to ask the model to rate its own output';
-    document.getElementById('judge-pending').style.display = 'inline';
-    document.getElementById('judge-value').style.display = 'none';
-    document.getElementById('analyze-btn').disabled = true;
-    document.getElementById('analyze-btn').textContent = 'Analyze →';
-    document.getElementById('gap-note').style.display = 'none';
-  }
-
   // ── Main generate ──
   async function generate() {
     const prompt  = document.getElementById('prompt').value.trim();
@@ -727,7 +661,9 @@
 
     showError('');
     setLoading(true);
-    resetAnalyze();
+    _lastLatent = null;
+    _lastHartmann = null;
+    document.getElementById('gap-note').style.display = 'none';
 
     setPlaceholder('text-base',    'Generating…');
     setPlaceholder('text-steered', 'Generating…');
@@ -779,9 +715,6 @@
       if (steeredRes.final_refusal) {
         document.getElementById('scores-steered').style.display = 'none';
         document.getElementById('eval-section').style.display = 'none';
-        document.getElementById('analyze-btn').disabled = true;
-        _lastSteeredText = null;
-        _lastEmotion = null;
         _lastHartmann = 0;
         _lastLatent = null;
       } else {
@@ -794,16 +727,10 @@
           _lastLatent = steeredRes.latent;
         }
 
-        // Store state for analyze
-        _lastSteeredText = steeredRes.text;
-        _lastEmotion = emotion;
         _lastHartmann = steeredRes.scores[emotion] || 0;
 
         document.getElementById('eval-section').style.display = 'block';
-        document.getElementById('analyze-btn').disabled = false;
-
-        // Initial gap note (without judge)
-        showGapNote(_lastLatent || 0, _lastHartmann, null);
+        showGapNote(_lastLatent || 0, _lastHartmann);
       }
 
     } catch (err) {
@@ -812,46 +739,6 @@
       setPlaceholder('text-steered', '—');
     } finally {
       setLoading(false);
-    }
-  }
-
-  // ── LLM judge ──
-  async function analyze() {
-    if (!_lastSteeredText || !_lastEmotion) return;
-
-    const btn = document.getElementById('analyze-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>Analyzing…';
-    document.getElementById('judge-pending').textContent = 'The model is reading its own output…';
-    document.getElementById('judge-pending').style.display = 'inline';
-    document.getElementById('judge-value').style.display = 'none';
-
-    try {
-      const res = await fetch(`${API}/analyze`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ text: _lastSteeredText, emotion: _lastEmotion }),
-      }).then(r => r.json());
-
-      const judge = res.llm_judge;
-      document.getElementById('judge-pending').style.display = 'none';
-
-      const valueEl = document.getElementById('judge-value');
-      if (judge !== null && judge !== undefined) {
-        valueEl.textContent = `${(judge * 100).toFixed(0)}%`;
-        valueEl.style.display = 'inline';
-        showGapNote(_lastLatent || 0, _lastHartmann, judge);
-      } else {
-        document.getElementById('judge-pending').textContent = 'Could not parse a score from the model.';
-        document.getElementById('judge-pending').style.display = 'inline';
-      }
-
-    } catch (err) {
-      document.getElementById('judge-pending').textContent = `Error: ${err.message}`;
-      document.getElementById('judge-pending').style.display = 'inline';
-    } finally {
-      btn.textContent = 'Analyze →';
-      btn.disabled = false;
     }
   }
 

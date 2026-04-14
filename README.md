@@ -23,6 +23,8 @@ This project was built to explore a concrete question raised by Anthropic's Apri
 
 7. **The corpus is geometrically stable; instability comes from elsewhere.** Subsampling stability analysis (N=20, subsample 35/44 without replacement) gives cosine(subsample\_vector, full\_vector) = 0.9952 ± 0.0011 for anger and 0.9915 ± 0.0018 for joy. Leave-one-out analysis finds no outlier sentences (max pull = 0.0007). The vectors do not depend on specific examples. Observed instability in generation results from three distinct sources: generation stochasticity (temperature=0.7), the RLHF behavioral layer (refusals), and the classifier register gap (Hartmann trained on Twitter/Reddit, not literary narrative).
 
+8. **Refusals are caused by prompt format, not steering.** "Continue this story:" prompts produce a 30% base refusal rate without any steering. Adding a joy or anger vector raises this to 70–80%. Descriptive prompts ("Describe...") produce 0% refusals across all tested conditions (base, joy α=2.0, anger α=2.0), even at high alpha. An alpha sweep on the narrative prompt confirms refusals occur at all alpha values (0.5–3.0) with no monotonic relationship, showing the refusal circuit is triggered by the prompt format and amplified — not created — by steering. This is a distinct interaction between prompt semantics and the RLHF behavioral layer.
+
 ---
 
 ## Table of contents
@@ -46,7 +48,7 @@ This project was built to explore a concrete question raised by Anthropic's Apri
 
 Given a neutral creative-writing prompt such as:
 
-> *Continue this story: She opened the envelope slowly and read the first line.*
+> *Describe the moment someone opens an unexpected letter and starts to read.*
 
 The system generates two responses in parallel:
 
@@ -483,21 +485,33 @@ If all 3 attempts return a refusal, the last response is returned as-is. This is
 
 Some prompts are more steerable than others. From `data/golden_set.json`:
 
-The UI provides four prompt chips:
+The UI provides four prompt chips, all using a descriptive framing ("Describe...") rather than a narrative-continuation framing ("Continue this story:"). This choice is deliberate and data-driven — see *Prompt format and RLHF refusals* below.
 
 | Chip | Prompt text |
 |------|-------------|
-| Envelope | *Continue this story: She opened the envelope slowly and read the first line.* |
-| The call | *Continue this story: He finally got the call he had been waiting for.* |
-| Old photograph | *Continue this story: He found the old photograph at the bottom of the drawer.* |
-| Park walk | *Continue this story: He walked through the park, thinking back on everything that had happened.* |
+| Envelope | *Describe the moment someone opens an unexpected letter and starts to read.* |
+| The call | *Describe the feeling of finally receiving a call you have been waiting for.* |
+| Old photograph | *Describe finding an old photograph tucked away in a drawer.* |
+| Park walk | *Describe a walk through a park as the afternoon light begins to fade.* |
 
 From the golden set (`data/golden_set.json`):
 
-- **Works well** — neutral creative prompts with no preset emotional direction (*Envelope*, *Old photograph*).
+- **Works well** — descriptive prompts with no preset emotional direction (*Envelope*, *Old photograph*).
 - **Inherent tension** — prompts with ambiguous or charged valence (*The call*, *Park walk*). These can pull the model toward anxiety even with joy steering; the narrative prior competes with the injected vector.
-- **Anger safety boundary** — anger steering on some prompts triggers RLHF refusals even at α=1.5. Auto-retry absorbs occasional refusals, but prompts with strong narrative tension may exhaust all 3 attempts.
 - **Classifier gap** — literary narrative text (warm, nostalgic register) is often misread by Hartmann as neutral or fear. The latent score and LLM judge provide complementary signals in these cases.
+
+### Prompt format and RLHF refusals
+
+Measured with `src/investigate_refusals.py` (N=10 runs, no auto-retry):
+
+| Prompt format | Base refusal | Joy α=2.0 | Anger α=2.0 |
+|---------------|-------------|-----------|-------------|
+| *"Continue this story: She opened the envelope..."* | **30%** | 80% | 80% |
+| *"Describe a walk through a park on a sunny afternoon."* | **0%** | 0% | 0% |
+
+The "Continue this story:" framing causes 30% refusals even without steering. The model interprets the instruction as completing someone else's text (potential copyright concern) or sees the incomplete snippet as ambiguous context and applies safety refusals by precaution. Steering amplifies this tendency — an alpha sweep on the narrative prompt shows 40–90% refusal across all alpha values (0.5–3.0), with no monotonic relationship. The refusals are driven by the prompt format, not the steering magnitude.
+
+Descriptive prompts ("Describe...") frame the task as original composition. Measured at N=10, they produce 0% refusals across all tested conditions (base, joy α=2.0, anger α=2.0). The current UI chips all use this format.
 
 ### Sources of instability — what is and is not the corpus
 

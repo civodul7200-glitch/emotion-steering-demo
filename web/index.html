@@ -455,7 +455,6 @@
       <label class="field-label" for="emotion">Emotion to inject</label>
       <select id="emotion">
         <option value="joy">Joy</option>
-        <option value="anger">Anger</option>
       </select>
     </div>
 
@@ -497,7 +496,7 @@
   <div class="card" id="col-steered">
     <div class="col-header">
       <div class="col-title">With <span id="steered-label">Joy</span> steering <span class="badge" id="alpha-badge">α 1.5</span></div>
-      <div class="col-subtitle">Emotion vector injected at layer 20 of the network <span id="retry-note" style="display:none; color:var(--muted); font-style:italic;"></span></div>
+      <div class="col-subtitle">Emotion vector injected at layer <span id="layer-display">…</span> of the network <span id="retry-note" style="display:none; color:var(--muted); font-style:italic;"></span></div>
     </div>
     <div class="output-text placeholder" id="text-steered">Result will appear here.</div>
 
@@ -615,7 +614,7 @@
     } else if (latent >= 0.5 && hartmann >= 0.5) {
       msg = '→ Both measures agree: the steering was effective and expressed on the surface.';
     } else if (latent < 0.2 && hartmann >= 0.5) {
-      msg = '→ High surface score, low internal alignment: the emotional vocabulary may be prompt-driven rather than from the steering vector.';
+      msg = '→ Surface and latent scores diverge — common in RLHF-aligned models where surface vocabulary and internal representations decouple.';
     }
 
     if (msg) {
@@ -676,70 +675,67 @@
       emotion.charAt(0).toUpperCase() + emotion.slice(1);
     document.getElementById('alpha-badge').textContent = `α ${alpha.toFixed(1)}`;
 
-    try {
-      const [baseRes, steeredRes] = await Promise.all([
-        fetch(`${API}/generate_base`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ prompt, max_new_tokens: 120 }),
-        }).then(r => r.json()),
-
-        fetch(`${API}/generate_steered`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ prompt, emotion, alpha, max_new_tokens: 120 }),
-        }).then(r => r.json()),
-      ]);
-
-      if (baseRes.detail)    throw new Error(baseRes.detail);
-      if (steeredRes.detail) throw new Error(steeredRes.detail);
-
-      // Base column
-      setResult('text-base', baseRes.text);
-      renderBars('bars-base', baseRes.scores, null);
+    const basePromise = fetch(`${API}/generate_base`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ prompt, max_new_tokens: 120 }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.detail) throw new Error(data.detail);
+      setResult('text-base', data.text);
+      renderBars('bars-base', data.scores, null);
       document.getElementById('scores-base').style.display = 'block';
+    })
+    .catch(err => {
+      showError(`Error: ${err.message}`);
+      setPlaceholder('text-base', '—');
+    });
 
-      // Steered column
-      setResult('text-steered', steeredRes.text);
+    const steeredPromise = fetch(`${API}/generate_steered`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ prompt, emotion, alpha, max_new_tokens: 120 }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.detail) throw new Error(data.detail);
+      setResult('text-steered', data.text);
 
-      // Retry note
       const retryNote = document.getElementById('retry-note');
-      if (steeredRes.attempts && steeredRes.attempts > 1) {
-        retryNote.textContent = `· retried ${steeredRes.attempts - 1}×`;
+      if (data.attempts && data.attempts > 1) {
+        retryNote.textContent = `· retried ${data.attempts - 1}×`;
         retryNote.style.display = 'inline';
       } else {
         retryNote.style.display = 'none';
       }
 
-      // Refus persistant : toutes les tentatives ont échoué
-      if (steeredRes.final_refusal) {
+      if (data.final_refusal) {
         document.getElementById('scores-steered').style.display = 'none';
-        document.getElementById('eval-section').style.display = 'none';
+        document.getElementById('eval-section').style.display   = 'none';
         _lastHartmann = 0;
-        _lastLatent = null;
+        _lastLatent   = null;
       } else {
-        renderBars('bars-steered', steeredRes.scores, emotion);
+        renderBars('bars-steered', data.scores, emotion);
         document.getElementById('scores-steered').style.display = 'block';
 
-        // Latent score
-        if (steeredRes.latent !== null && steeredRes.latent !== undefined) {
-          renderLatent(steeredRes.latent);
-          _lastLatent = steeredRes.latent;
+        if (data.latent !== null && data.latent !== undefined) {
+          renderLatent(data.latent);
+          _lastLatent = data.latent;
         }
 
-        _lastHartmann = steeredRes.scores[emotion] || 0;
-
+        _lastHartmann = data.scores[emotion] || 0;
         document.getElementById('eval-section').style.display = 'block';
         showGapNote(_lastLatent || 0, _lastHartmann);
       }
-
-    } catch (err) {
+    })
+    .catch(err => {
       showError(`Error: ${err.message}`);
-      setPlaceholder('text-base',    '—');
       setPlaceholder('text-steered', '—');
-    } finally {
-      setLoading(false);
-    }
+    });
+
+    await Promise.all([basePromise, steeredPromise]);
+    setLoading(false);
   }
 
   // ── Load emotion options from API ──
@@ -752,6 +748,16 @@
         .join('');
     })
     .catch(() => {});
+
+  // ── Load config (layer index) from API ──
+  fetch(`${API}/config`)
+    .then(r => r.json())
+    .then(cfg => {
+      document.getElementById('layer-display').textContent = cfg.layer_idx;
+    })
+    .catch(() => {
+      document.getElementById('layer-display').textContent = '?';
+    });
 </script>
 </body>
 </html>

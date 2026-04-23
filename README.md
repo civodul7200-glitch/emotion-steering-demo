@@ -9,7 +9,7 @@ This project was built to explore a concrete question raised by Anthropic's Apri
 
 ## Key findings
 
-1. **Emotional directions are real and extractable.** The contrastive joy vector at layer 20 produces measurable emotional shifts. Hartmann classifier scores reach 25–64% on narrative continuation prompts; latent cosine alignment (0.05–0.16) confirms the internal representation is shifted even when surface vocabulary is neutral.
+1. **Emotional directions are real and extractable.** The contrastive joy vector at layer 22 produces measurable emotional shifts. Hartmann classifier scores reach 25–64% on narrative continuation prompts; latent cosine alignment (0.05–0.16) confirms the internal representation is shifted even when surface vocabulary is neutral.
 
 2. **The classifier measures surface, not depth.** Stylistically warm, nostalgic text scores as neutral — the classifier reads explicit emotional vocabulary, not narrative register. The emotional quality is real; the classifier is blind to it. Latent alignment provides a complementary signal.
 
@@ -19,7 +19,7 @@ This project was built to explore a concrete question raised by Anthropic's Apri
 
 5. **RLHF safety is behavioral, not representational.** On instruction-tuned models, emotional directions exist in the pre-training geometry but their expression is gated by a separate behavioral layer. Tested on Qwen2.5-1.5B-Instruct: "Continue this story:" prompts produce 30% base refusal rate; joy steering raises it to 80%. This interaction is prompt-format-driven, not steering-driven.
 
-6. **Joy and anger overlap in latent space — and this overlap is model-dependent.** cosine(joy, anger) = 0.49 on Llama 3.2-3B (vs. 0.72–0.78 on the Qwen2.5 family). The overlap encodes a shared "arousal" component from the training corpus. Even at 0.49, the anger vector does not produce reliably angry text — it pushes the generation toward neutral-foreboding rather than anger. The anger vector is excluded from the live demo for this reason.
+6. **Joy and anger overlap in latent space — and this overlap is model-dependent.** cosine(joy, anger) = 0.453 at layer 22 on Llama 3.2-3B (vs. 0.72–0.78 on the Qwen2.5 family; 0.493 at layer 20). The overlap encodes a shared "arousal" component from the training corpus. Even at 0.453, the anger vector does not produce reliably angry text — it pushes the generation toward neutral-foreboding rather than anger. Both vectors are exposed in the live demo.
 
 7. **The corpus is geometrically stable; instability comes from elsewhere.** Subsampling stability analysis (N=20, subsample 35/44 without replacement) gives cosine(subsample\_vector, full\_vector) = 0.9952 ± 0.0011 for anger and 0.9915 ± 0.0018 for joy. Leave-one-out analysis finds no outlier sentences (max pull = 0.0007). The vectors do not depend on specific examples. Observed instability in generation results from three distinct sources: generation stochasticity (temperature=0.7), the RLHF behavioral layer (refusals), and the classifier register gap (Hartmann trained on Twitter/Reddit, not literary narrative).
 
@@ -29,7 +29,9 @@ This project was built to explore a concrete question raised by Anthropic's Apri
 
 10. **Scenario semantic priors can absorb the steering vector.** The outcome of any steering run depends on the balance between the scenario's prior amplitude in the target direction and α × ‖v‖. A park-at-sunset scenario produced joy 79% with anger steering (prior overwhelmed the vector). Emotionally ambiguous scenarios have weaker priors and allow stronger vector influence. A strong prior can be more influential than α=2.0 of steering.
 
-11. **Model family and size are the dominant bottleneck for activation steering.** Four models were tested at ≤3B parameters on 16 GB Apple M1: Qwen2.5-1.5B-Instruct (RLHF confound), Qwen2.5-1.5B base (erratic generation, latent 0.12–0.21), Qwen2.5-3B base (negative latent scores at layer 20), Llama 3.2-3B base (best results: coherent narrative, latent 0.05–0.16, no refusals, cosine(joy,anger) = 0.49). Activation steering papers in the literature use 7B+ models. At ≤3B, emotional direction separation is insufficient for reliable anger steering; joy steering is demonstrable but modest.
+11. **Model family and size are the dominant bottleneck for activation steering.** Four models were tested at ≤3B parameters on 16 GB Apple M1: Qwen2.5-1.5B-Instruct (RLHF confound), Qwen2.5-1.5B base (erratic generation, latent 0.12–0.21), Qwen2.5-3B base (negative latent scores at layer 20), Llama 3.2-3B base (best results: coherent narrative, latent 0.05–0.16, no refusals, cosine(joy,anger) = 0.453 at layer 22). Activation steering papers in the literature use 7B+ models. At ≤3B, joy steering is demonstrable but modest; anger is exposed in the API and UI with the caveats noted in findings 6 and 12.
+
+12. **Layer search identifies layer 22 as optimal for Llama 3.2-3B.** A systematic experiment tested injection layers [16, 18, 20, 22, 24] on 2 validated prompts with alpha=1.5. Layer 22 produced the highest latent alignment scores on both prompts (0.126 and 0.092 vs 0.057 and -0.008 at layer 20). Joy/anger cosine similarity at layer 22 is 0.453 vs 0.493 at layer 20 — the two directions are marginally more distinct at the optimal layer. Vectors were re-extracted at layer 22 and all LAYER_IDX constants updated consistently.
 
 ---
 
@@ -59,12 +61,12 @@ Given a narrative continuation prompt such as:
 The system generates two responses in parallel:
 
 - **Base** — standard generation, no intervention.
-- **Steered** — same generation, but a direction vector is added to the hidden states of layer 20 at every forward pass during decoding. This shifts the model's internal representation toward joy, causing the output tone to change accordingly.
+- **Steered** — same generation, but a direction vector is added to the hidden states of layer 22 at every forward pass during decoding. This shifts the model's internal representation toward joy, causing the output tone to change accordingly.
 
 Each steered output is evaluated with two independent measures:
 
 - **Surface detector** — `j-hartmann/emotion-english-distilroberta-base` (7 classes), trained on Twitter/Reddit, reads explicit emotional vocabulary.
-- **Internal alignment** — cosine similarity between the generated text's hidden representation at layer 20 (seq mean) and the steering vector. Measures whether the emotion is encoded internally, independent of surface vocabulary.
+- **Internal alignment** — cosine similarity between the generated text's hidden representation at layer 22 (seq mean) and the steering vector. Measures whether the emotion is encoded internally, independent of surface vocabulary.
 
 ---
 
@@ -72,7 +74,7 @@ Each steered output is evaluated with two independent measures:
 
 ### Step 1 — Vector extraction (offline, done once)
 
-A corpus of 132 short narrative sentences is encoded through the LLM without generation (single forward pass per sentence). At each forward pass, the hidden state of the **last token** at **layer 20** is captured. The corpus is split into three classes:
+A corpus of 132 short narrative sentences is encoded through the LLM without generation (single forward pass per sentence). At each forward pass, the hidden state of the **last token** at **layer 22** is captured. The corpus is split into three classes:
 
 | Class   | Example sentence |
 |---------|-----------------|
@@ -93,7 +95,7 @@ Each vector has shape `[3072]` (the hidden dimension of Llama 3.2-3B). Vectors a
 
 ### Step 2 — Hook injection (at generation time)
 
-A `SteeringHook` registers a PyTorch forward hook on `model.model.layers[20]` before calling `model.generate()`. On every forward pass during decoding, the hook intercepts the layer output and adds the scaled vector:
+A `SteeringHook` registers a PyTorch forward hook on `model.model.layers[22]` before calling `model.generate()`. On every forward pass during decoding, the hook intercepts the layer output and adds the scaled vector:
 
 ```
 h_steered = h + alpha * vector
@@ -127,8 +129,8 @@ emotion-steering-demo/
 │   └── index.html              # Single-page UI (vanilla JS, fetch API)
 │
 ├── vectors/
-│   ├── joy_vector.pt           # Precomputed steering vector [1536] float32
-│   └── anger_vector.pt         # Precomputed steering vector [1536] float32
+│   ├── joy_vector.pt           # Precomputed steering vector [3072] float16
+│   └── anger_vector.pt         # Precomputed steering vector [3072] float16
 │
 ├── data/
 │   ├── corpus.json             # 132 narrative sentences (44 × joy/anger/neutral)
@@ -235,6 +237,8 @@ The server prints:
 ```
 Wait for `Prêt.` before sending requests.
 
+Results render progressively — the base generation appears as soon as it completes, followed by the steered generation. Both requests fire in parallel; the backend semaphore serializes them, so base typically appears first.
+
 ---
 
 ## 6. API reference
@@ -249,7 +253,7 @@ Returns the server status, the active device, and the loaded emotion names.
 {
   "status": "ok",
   "device": "mps",
-  "emotions": ["joy"]
+  "emotions": ["joy", "anger"]
 }
 ```
 
@@ -264,6 +268,12 @@ Returns metadata for each available steering vector.
     "label": "Joy",
     "alpha_default": 1.5,
     "description": "Warm, joyful, enthusiastic tone"
+  },
+  {
+    "name": "anger",
+    "label": "Anger",
+    "alpha_default": 1.5,
+    "description": "Tense, aggressive, confrontational tone"
   }
 ]
 ```
@@ -298,14 +308,14 @@ Standard generation without steering.
 
 ### `POST /generate_steered`
 
-Generation with a steering vector injected at layer 20. Retries silently up to 3 times if the output is detected as an RLHF refusal (prefix matching against a fixed list).
+Generation with a steering vector injected at layer 22. Retries silently up to 3 times if the output is detected as an RLHF refusal (prefix matching against a fixed list).
 
 **Request body:**
 
 | Field            | Type    | Default | Constraints   |
 |------------------|---------|---------|---------------|
 | `prompt`         | string  | —       | required      |
-| `emotion`        | string  | —       | `"joy"`       |
+| `emotion`        | string  | —       | `"joy"`, `"anger"` |
 | `alpha`          | float   | 2.0     | 0.1 ≤ α ≤ 10.0 |
 | `max_new_tokens` | integer | 120     | 20 ≤ n ≤ 400 |
 
@@ -328,7 +338,7 @@ Generation with a steering vector injected at layer 20. Retries silently up to 3
 }
 ```
 
-- `latent` — cosine similarity between the text's hidden representation (seq mean, layer 20) and the steering vector. Range: [-1, 1]. `null` on error.
+- `latent` — cosine similarity between the text's hidden representation (seq mean, layer 22) and the steering vector. Range: [-1, 1]. `null` on error.
 - `attempts` — number of generation attempts before a non-refusal output was returned (1 = no retry needed, 3 = all retries exhausted and last response is returned as-is).
 
 **Error (400):** if `emotion` is not a known vector name.
@@ -341,7 +351,7 @@ Generation with a steering vector injected at layer 20. Retries silently up to 3
 The precomputed vectors in `vectors/` are ready to use. If you modify the corpus or want to experiment with a different layer:
 
 ```bash
-# Uses LAYER_IDX = 20 by default (set in extract_vectors.py)
+# Uses LAYER_IDX = 22 by default (set in extract_vectors.py)
 python -m src.extract_vectors
 ```
 
@@ -352,7 +362,7 @@ This will:
 4. Compute contrastive means
 5. Save `vectors/joy_vector.pt` and `vectors/anger_vector.pt`
 
-The script also prints vector norms and `cosine_similarity(joy_vector, anger_vector)`. On Llama 3.2-3B the measured value is 0.493 — anger is kept in the corpus and its vector is computed, but it is not exposed in the API or UI (see finding 6 and 11).
+The script also prints vector norms and `cosine_similarity(joy_vector, anger_vector)`. On Llama 3.2-3B the measured value is 0.453 at layer 22 (0.493 at layer 20) — both vectors are exposed in the API and UI.
 
 ---
 
@@ -485,7 +495,7 @@ Observed behavior per chip (joy α=1.5, N=1 runs, qualitative, Llama 3.2-3B):
 
 - **Best joy target** — *Envelope* and *The call*: emotionally ambiguous priors allow the vector to shift tone.
 - **Register sensitivity** — *Old photograph* tends toward melancholic-contemplative register, which competes with the joy vector.
-- **Anger** — excluded from the live demo. On Llama 3.2-3B, anger steering produces neutral-foreboding rather than reliably angry text regardless of prompt. See findings 6 and 11.
+- **Anger** — available in the UI. On Llama 3.2-3B, anger steering tends toward neutral-foreboding rather than strongly angry text (finding 6). Effect varies by prompt and alpha.
 
 ### Prompt format and RLHF refusals
 
@@ -634,7 +644,7 @@ These are methods of `ActivationCapture` (not standalone functions). An earlier 
 - **Model ID:** `meta-llama/Llama-3.2-3B`
 - **Hidden size:** 3072
 - **Number of layers:** 28 (indices 0–27)
-- **Target steering layer:** 20
+- **Target steering layer:** 22
 - **Precision:** `torch.float16` (bfloat16 has incomplete MPS support on M1)
 - **Device:** `mps` on Apple Silicon, CPU fallback otherwise
 - **Classifier:** `j-hartmann/emotion-english-distilroberta-base` on CPU (7 classes: anger, disgust, fear, joy, neutral, sadness, surprise)

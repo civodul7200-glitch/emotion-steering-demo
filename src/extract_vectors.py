@@ -28,7 +28,7 @@ from src.hooks import ActivationCapture
 
 CORPUS_PATH = Path("data/corpus.json")
 VECTORS_DIR = Path("vectors")
-LAYER_IDX   = 20
+LAYER_IDX   = 22
 
 
 def encode_texts(

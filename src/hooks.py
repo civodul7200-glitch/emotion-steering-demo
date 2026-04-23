@@ -4,10 +4,10 @@ Capture des activations par forward hook.
 Règle absolue : tout hook doit être supprimé après usage.
 ActivationCapture et count_active_hooks() permettent de le vérifier.
 
-Architecture Qwen2.5-1.5B-Instruct :
+Architecture Llama 3.2-3B :
   - 28 couches (model.model.layers[0..27])
-  - hidden_size = 1536
-  - transformers 5.x : output d'une couche = Tensor [batch, seq_len, 1536]
+  - hidden_size = 3072
+  - transformers 5.x : output d'une couche = Tensor [batch, seq_len, 3072]
   - transformers 4.x : output = tuple, output[0] = Tensor (compatibilité maintenue)
 """
 from __future__ import annotations

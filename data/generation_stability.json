@@ -1,0 +1,765 @@
+{
+  "generated_at": "2026-04-13T12:29:44.265501Z",
+  "n_runs": 10,
+  "temperature": 0.7,
+  "layer_idx": 20,
+  "results": [
+    {
+      "key": "env-joy-2.0",
+      "golden_id": "env-joy-calibration",
+      "prompt": "Continue this story: She opened the envelope slowly and read the first line.",
+      "emotion": "joy",
+      "alpha": 2.0,
+      "note": "Sweet spot document\u00e9 83.8%",
+      "n_runs": 10,
+      "n_valid": 5,
+      "refusal_rate": 0.5,
+      "target_mean": 0.128,
+      "target_std": 0.2758,
+      "target_min": 0.001,
+      "target_max": 0.6213,
+      "latent_mean": 0.2099,
+      "latent_std": 0.0112,
+      "verdict": "INSTABLE",
+      "runs": [
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.9782,
+            "surprise": 0.0076,
+            "neutral": 0.0072,
+            "anger": 0.0023,
+            "disgust": 0.0022,
+            "sadness": 0.0014,
+            "joy": 0.0011
+          },
+          "latent": 0.1919,
+          "target": 0.0011
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.6213,
+            "sadness": 0.2744,
+            "neutral": 0.0375,
+            "surprise": 0.0288,
+            "fear": 0.0266,
+            "anger": 0.0089,
+            "disgust": 0.0025
+          },
+          "latent": 0.2083,
+          "target": 0.6213
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "surprise": 0.9423,
+            "fear": 0.0208,
+            "neutral": 0.019,
+            "joy": 0.0101,
+            "anger": 0.0049,
+            "disgust": 0.0017,
+            "sadness": 0.0013
+          },
+          "latent": 0.2205,
+          "target": 0.0101
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.948,
+            "neutral": 0.0196,
+            "surprise": 0.0139,
+            "disgust": 0.0093,
+            "anger": 0.0054,
+            "sadness": 0.0028,
+            "joy": 0.001
+          },
+          "latent": 0.218,
+          "target": 0.001
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.8502,
+            "neutral": 0.086,
+            "surprise": 0.0298,
+            "disgust": 0.0166,
+            "anger": 0.009,
+            "joy": 0.0064,
+            "sadness": 0.0021
+          },
+          "latent": 0.211,
+          "target": 0.0064
+        },
+        {
+          "refusal": true
+        }
+      ]
+    },
+    {
+      "key": "env-anger-1.5",
+      "golden_id": "env-anger-nonmonotone",
+      "prompt": "Continue this story: She opened the envelope slowly and read the first line.",
+      "emotion": "anger",
+      "alpha": 1.5,
+      "note": "Peak non-monotone document\u00e9 92.7%",
+      "n_runs": 10,
+      "n_valid": 2,
+      "refusal_rate": 0.8,
+      "target_mean": 0.0186,
+      "target_std": 0.0237,
+      "target_min": 0.0018,
+      "target_max": 0.0353,
+      "latent_mean": 0.162,
+      "latent_std": 0.0168,
+      "verdict": "FRAGILE",
+      "runs": [
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "disgust": 0.5986,
+            "neutral": 0.2978,
+            "fear": 0.0407,
+            "anger": 0.0353,
+            "surprise": 0.0172,
+            "sadness": 0.0061,
+            "joy": 0.0042
+          },
+          "latent": 0.1501,
+          "target": 0.0353
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.9797,
+            "neutral": 0.0059,
+            "sadness": 0.0051,
+            "disgust": 0.0031,
+            "surprise": 0.0029,
+            "anger": 0.0018,
+            "joy": 0.0012
+          },
+          "latent": 0.1738,
+          "target": 0.0018
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        }
+      ]
+    },
+    {
+      "key": "env-anger-2.0",
+      "golden_id": "env-anger-nonmonotone",
+      "prompt": "Continue this story: She opened the envelope slowly and read the first line.",
+      "emotion": "anger",
+      "alpha": 2.0,
+      "note": "D\u00e9gradation document\u00e9e 84.5%",
+      "n_runs": 10,
+      "n_valid": 5,
+      "refusal_rate": 0.5,
+      "target_mean": 0.0193,
+      "target_std": 0.0248,
+      "target_min": 0.0013,
+      "target_max": 0.0625,
+      "latent_mean": 0.1634,
+      "latent_std": 0.0095,
+      "verdict": "INSTABLE",
+      "runs": [
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.9803,
+            "neutral": 0.0071,
+            "joy": 0.0041,
+            "surprise": 0.0036,
+            "disgust": 0.0023,
+            "anger": 0.0013,
+            "sadness": 0.0013
+          },
+          "latent": 0.1709,
+          "target": 0.0013
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.8033,
+            "surprise": 0.0845,
+            "neutral": 0.0703,
+            "joy": 0.0147,
+            "anger": 0.0108,
+            "sadness": 0.0087,
+            "disgust": 0.0078
+          },
+          "latent": 0.1739,
+          "target": 0.0108
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.917,
+            "neutral": 0.0362,
+            "surprise": 0.0173,
+            "anger": 0.0162,
+            "disgust": 0.0057,
+            "joy": 0.0055,
+            "sadness": 0.0021
+          },
+          "latent": 0.1497,
+          "target": 0.0162
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "neutral": 0.4497,
+            "fear": 0.3344,
+            "surprise": 0.1107,
+            "anger": 0.0625,
+            "disgust": 0.0277,
+            "sadness": 0.0091,
+            "joy": 0.006
+          },
+          "latent": 0.1621,
+          "target": 0.0625
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.9596,
+            "disgust": 0.0198,
+            "neutral": 0.0083,
+            "anger": 0.0055,
+            "surprise": 0.0042,
+            "sadness": 0.0018,
+            "joy": 0.0008
+          },
+          "latent": 0.1606,
+          "target": 0.0055
+        }
+      ]
+    },
+    {
+      "key": "call-joy-1.5",
+      "golden_id": "call-01",
+      "prompt": "Continue this story: He finally got the call he had been waiting for.",
+      "emotion": "joy",
+      "alpha": 1.5,
+      "note": "Meilleure coh\u00e9rence narrative document\u00e9e 95.4%",
+      "n_runs": 10,
+      "n_valid": 3,
+      "refusal_rate": 0.7,
+      "target_mean": 0.0885,
+      "target_std": 0.1437,
+      "target_min": 0.0038,
+      "target_max": 0.2544,
+      "latent_mean": 0.1958,
+      "latent_std": 0.0064,
+      "verdict": "FRAGILE",
+      "runs": [
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "surprise": 0.4252,
+            "neutral": 0.2576,
+            "joy": 0.2544,
+            "anger": 0.0354,
+            "disgust": 0.0123,
+            "fear": 0.012,
+            "sadness": 0.0032
+          },
+          "latent": 0.2008,
+          "target": 0.2544
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.9438,
+            "surprise": 0.0239,
+            "neutral": 0.0206,
+            "anger": 0.0039,
+            "joy": 0.0038,
+            "sadness": 0.0022,
+            "disgust": 0.0018
+          },
+          "latent": 0.198,
+          "target": 0.0038
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.9749,
+            "joy": 0.0073,
+            "neutral": 0.0071,
+            "surprise": 0.0045,
+            "anger": 0.0032,
+            "sadness": 0.0023,
+            "disgust": 0.0007
+          },
+          "latent": 0.1885,
+          "target": 0.0073
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        }
+      ]
+    },
+    {
+      "key": "call-anger-2.0",
+      "golden_id": "call-01",
+      "prompt": "Continue this story: He finally got the call he had been waiting for.",
+      "emotion": "anger",
+      "alpha": 2.0,
+      "note": "Optimal anger sur ce prompt document\u00e9 93.5%",
+      "n_runs": 10,
+      "n_valid": 2,
+      "refusal_rate": 0.8,
+      "target_mean": 0.0024,
+      "target_std": 0.0017,
+      "target_min": 0.0012,
+      "target_max": 0.0036,
+      "latent_mean": 0.162,
+      "latent_std": 0.0066,
+      "verdict": "FRAGILE",
+      "runs": [
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.972,
+            "neutral": 0.0129,
+            "surprise": 0.0044,
+            "disgust": 0.0037,
+            "anger": 0.0036,
+            "sadness": 0.0027,
+            "joy": 0.0008
+          },
+          "latent": 0.1574,
+          "target": 0.0036
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.9762,
+            "joy": 0.0136,
+            "neutral": 0.0042,
+            "surprise": 0.0021,
+            "sadness": 0.0021,
+            "anger": 0.0012,
+            "disgust": 0.0006
+          },
+          "latent": 0.1667,
+          "target": 0.0012
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        },
+        {
+          "refusal": true
+        }
+      ]
+    },
+    {
+      "key": "park-joy-2.0",
+      "golden_id": "park-01",
+      "prompt": "Describe a walk through a park on a sunny afternoon.",
+      "emotion": "joy",
+      "alpha": 2.0,
+      "note": "Threshold effect document\u00e9 92.6% \u2014 prompt original du golden set",
+      "n_runs": 10,
+      "n_valid": 10,
+      "refusal_rate": 0.0,
+      "target_mean": 0.6188,
+      "target_std": 0.3556,
+      "target_min": 0.1019,
+      "target_max": 0.932,
+      "latent_mean": 0.2029,
+      "latent_std": 0.0028,
+      "verdict": "INSTABLE",
+      "runs": [
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.932,
+            "neutral": 0.0473,
+            "disgust": 0.0109,
+            "surprise": 0.0031,
+            "sadness": 0.0031,
+            "anger": 0.0022,
+            "fear": 0.0014
+          },
+          "latent": 0.2044,
+          "target": 0.932
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.9014,
+            "neutral": 0.0695,
+            "disgust": 0.0146,
+            "surprise": 0.0056,
+            "sadness": 0.0038,
+            "fear": 0.0031,
+            "anger": 0.0021
+          },
+          "latent": 0.2053,
+          "target": 0.9014
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "neutral": 0.6708,
+            "disgust": 0.1493,
+            "joy": 0.1101,
+            "anger": 0.0261,
+            "fear": 0.0183,
+            "sadness": 0.0165,
+            "surprise": 0.0088
+          },
+          "latent": 0.2027,
+          "target": 0.1101
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "fear": 0.6979,
+            "surprise": 0.1392,
+            "joy": 0.1019,
+            "neutral": 0.0367,
+            "disgust": 0.0095,
+            "anger": 0.0084,
+            "sadness": 0.0065
+          },
+          "latent": 0.2053,
+          "target": 0.1019
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "neutral": 0.375,
+            "disgust": 0.3579,
+            "joy": 0.1462,
+            "fear": 0.0692,
+            "sadness": 0.0267,
+            "anger": 0.0186,
+            "surprise": 0.0063
+          },
+          "latent": 0.2045,
+          "target": 0.1462
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.9132,
+            "neutral": 0.0635,
+            "disgust": 0.0112,
+            "sadness": 0.0061,
+            "surprise": 0.0031,
+            "anger": 0.0018,
+            "fear": 0.0012
+          },
+          "latent": 0.2033,
+          "target": 0.9132
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.6697,
+            "neutral": 0.1853,
+            "disgust": 0.0757,
+            "fear": 0.0262,
+            "sadness": 0.0155,
+            "anger": 0.0145,
+            "surprise": 0.0131
+          },
+          "latent": 0.1999,
+          "target": 0.6697
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.7323,
+            "neutral": 0.1991,
+            "disgust": 0.0376,
+            "sadness": 0.0133,
+            "fear": 0.008,
+            "anger": 0.007,
+            "surprise": 0.0027
+          },
+          "latent": 0.2057,
+          "target": 0.7323
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.9122,
+            "neutral": 0.0438,
+            "sadness": 0.0224,
+            "disgust": 0.014,
+            "anger": 0.0048,
+            "surprise": 0.0016,
+            "fear": 0.0012
+          },
+          "latent": 0.1978,
+          "target": 0.9122
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.7689,
+            "neutral": 0.1263,
+            "disgust": 0.0425,
+            "anger": 0.0253,
+            "sadness": 0.0232,
+            "fear": 0.0113,
+            "surprise": 0.0026
+          },
+          "latent": 0.1997,
+          "target": 0.7689
+        }
+      ]
+    },
+    {
+      "key": "park-anger-2.0",
+      "golden_id": "park-01",
+      "prompt": "Describe a walk through a park on a sunny afternoon.",
+      "emotion": "anger",
+      "alpha": 2.0,
+      "note": "Inversion document\u00e9e 90.1% malgr\u00e9 le premise positif",
+      "n_runs": 10,
+      "n_valid": 10,
+      "refusal_rate": 0.0,
+      "target_mean": 0.0121,
+      "target_std": 0.0103,
+      "target_min": 0.001,
+      "target_max": 0.0384,
+      "latent_mean": 0.1419,
+      "latent_std": 0.0073,
+      "verdict": "STABLE",
+      "runs": [
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.9672,
+            "neutral": 0.0183,
+            "disgust": 0.0057,
+            "surprise": 0.0034,
+            "sadness": 0.0026,
+            "fear": 0.0018,
+            "anger": 0.001
+          },
+          "latent": 0.1293,
+          "target": 0.001
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.9084,
+            "neutral": 0.0495,
+            "disgust": 0.0242,
+            "sadness": 0.0088,
+            "anger": 0.0064,
+            "fear": 0.0015,
+            "surprise": 0.0012
+          },
+          "latent": 0.1452,
+          "target": 0.0064
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "neutral": 0.4526,
+            "joy": 0.3087,
+            "disgust": 0.1989,
+            "sadness": 0.0161,
+            "anger": 0.0109,
+            "surprise": 0.0068,
+            "fear": 0.006
+          },
+          "latent": 0.1447,
+          "target": 0.0109
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.6608,
+            "neutral": 0.2274,
+            "disgust": 0.0642,
+            "sadness": 0.0185,
+            "anger": 0.0137,
+            "surprise": 0.0094,
+            "fear": 0.0061
+          },
+          "latent": 0.1456,
+          "target": 0.0137
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "disgust": 0.7469,
+            "neutral": 0.1749,
+            "fear": 0.0247,
+            "sadness": 0.0168,
+            "anger": 0.0166,
+            "joy": 0.0153,
+            "surprise": 0.0047
+          },
+          "latent": 0.1513,
+          "target": 0.0166
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.4477,
+            "neutral": 0.3163,
+            "disgust": 0.1387,
+            "anger": 0.0384,
+            "sadness": 0.0276,
+            "fear": 0.026,
+            "surprise": 0.0053
+          },
+          "latent": 0.1434,
+          "target": 0.0384
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.8479,
+            "neutral": 0.06,
+            "disgust": 0.0535,
+            "sadness": 0.0201,
+            "anger": 0.0109,
+            "fear": 0.0063,
+            "surprise": 0.0012
+          },
+          "latent": 0.1466,
+          "target": 0.0109
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.8238,
+            "neutral": 0.1179,
+            "disgust": 0.0398,
+            "anger": 0.0071,
+            "sadness": 0.0065,
+            "surprise": 0.0027,
+            "fear": 0.0021
+          },
+          "latent": 0.1303,
+          "target": 0.0071
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.7967,
+            "neutral": 0.1514,
+            "disgust": 0.0306,
+            "sadness": 0.0093,
+            "fear": 0.0046,
+            "anger": 0.004,
+            "surprise": 0.0035
+          },
+          "latent": 0.1372,
+          "target": 0.004
+        },
+        {
+          "refusal": false,
+          "scores": {
+            "joy": 0.7227,
+            "disgust": 0.1218,
+            "neutral": 0.0722,
+            "fear": 0.0308,
+            "sadness": 0.0234,
+            "surprise": 0.0166,
+            "anger": 0.0125
+          },
+          "latent": 0.1458,
+          "target": 0.0125
+        }
+      ]
+    }
+  ]
+}

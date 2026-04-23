@@ -41,7 +41,7 @@ import torch.nn.functional as F
 from src.hooks import ActivationCapture
 from src.model_loader import ModelWrapper
 
-LAYER_IDX = 20
+LAYER_IDX = 22
 
 # ----------------------------------------------------------------------
 # Prompt du LLM judge

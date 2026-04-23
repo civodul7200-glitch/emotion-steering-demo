@@ -38,7 +38,7 @@ from src.steering import generate_steered as _generate_steered
 # ----------------------------------------------------------------------
 
 VECTORS_DIR  = Path("vectors")
-LAYER_IDX    = 20
+LAYER_IDX    = 22
 MAX_RETRIES  = 3   # tentatives max avant de rendre un refus tel quel
 
 # Préfixes caractéristiques d'un refus RLHF
@@ -67,6 +67,11 @@ EMOTIONS: dict[str, dict] = {
         "label":         "Joy",
         "alpha_default": 1.5,
         "description":   "Warm, joyful, enthusiastic tone",
+    },
+    "anger": {
+        "label":         "Anger",
+        "alpha_default": 1.5,
+        "description":   "Tense, aggressive, confrontational tone",
     },
 }
 
@@ -185,6 +190,11 @@ async def health():
         "device": str(_wrapper.device) if _wrapper else "not loaded",
         "emotions": list(_vectors.keys()),
     }
+
+
+@app.get("/config")
+async def config():
+    return {"layer_idx": LAYER_IDX}
 
 
 @app.get("/emotions")
